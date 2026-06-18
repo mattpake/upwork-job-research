@@ -1,5 +1,5 @@
 {
-  "apify_actor_id": "neatrat/upwork-job-scraper",
+  "apify_actor_id": "upwork-vibe/upwork-job-scraper",
   "results_per_keyword": 50,
   "request_timeout_seconds": 120,
   "keywords_path": "config/keywords.json",

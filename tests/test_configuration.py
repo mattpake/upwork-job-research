@@ -53,7 +53,7 @@ def test_load_application_settings_requires_apify_token_for_live_scans(monkeypat
     loadedSettings = loadApplicationSettings()
 
     assert loadedSettings.apifyApiToken == ""
-    assert loadedSettings.apifyActorId == "neatrat/upwork-job-scraper"
+    assert loadedSettings.apifyActorId == "upwork-vibe/upwork-job-scraper"
     assert loadedSettings.resultsPerKeyword == 50
     assert loadedSettings.dashboardHost == "127.0.0.1"
     assert loadedSettings.dashboardPort == 8000
@@ -65,7 +65,7 @@ def test_load_file_backed_application_settings_uses_settings_json_values(tmp_pat
     settingsConfigPath.write_text(
         json.dumps(
             {
-                "apify_actor_id": "neatrat/upwork-job-scraper",
+                "apify_actor_id": "upwork-vibe/upwork-job-scraper",
                 "results_per_keyword": 25,
                 "request_timeout_seconds": 90,
                 "keywords_path": "custom/keywords.json",
@@ -82,7 +82,7 @@ def test_load_file_backed_application_settings_uses_settings_json_values(tmp_pat
 
     loadedSettings = loadFileBackedApplicationSettings(settingsConfigPath)
 
-    assert loadedSettings.apifyActorId == "neatrat/upwork-job-scraper"
+    assert loadedSettings.apifyActorId == "upwork-vibe/upwork-job-scraper"
     assert loadedSettings.resultsPerKeyword == 25
     assert loadedSettings.requestTimeoutSeconds == 90
     assert loadedSettings.keywordsPath.as_posix() == "custom/keywords.json"

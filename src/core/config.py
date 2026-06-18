@@ -6,7 +6,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 
-DEFAULT_APIFY_ACTOR_ID = "neatrat/upwork-job-scraper"
+DEFAULT_APIFY_ACTOR_ID = "upwork-vibe/upwork-job-scraper"
 DEFAULT_RESULTS_PER_KEYWORD = 50
 DEFAULT_KEYWORDS_PATH = Path("config/keywords.json")
 DEFAULT_SETTINGS_PATH = Path("config/settings.json")

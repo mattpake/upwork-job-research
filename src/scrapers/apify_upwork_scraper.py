@@ -1,10 +1,10 @@
+import asyncio
+import logging
 from typing import Any
 
-import httpx
-import logging
+from apify_client import ApifyClient
 
 
-APIFY_API_BASE_URL = "https://api.apify.com/v2"
 logger = logging.getLogger(__name__)
 
 
@@ -15,10 +15,17 @@ class ApifyScraperError(RuntimeError):
 class ApifyUpworkScraper:
     """Runs the configured Apify Upwork actor and returns raw dataset items."""
 
-    def __init__(self, apiToken: str, actorId: str, timeoutSeconds: int) -> None:
+    def __init__(
+        self,
+        apiToken: str,
+        actorId: str,
+        timeoutSeconds: int,
+        apifyClientFactory=ApifyClient,
+    ) -> None:
         self.apiToken = apiToken
         self.actorId = actorId
         self.timeoutSeconds = timeoutSeconds
+        self.apifyClientFactory = apifyClientFactory
 
     async def fetchJobsForKeyword(self, keyword: str, maxJobs: int) -> list[dict[str, Any]]:
         """Run the configured Apify actor synchronously for one keyword."""
@@ -26,28 +33,22 @@ class ApifyUpworkScraper:
         if not self.apiToken:
             raise ApifyScraperError("APIFY_API_TOKEN is required before running a live Upwork scan.")
 
-        actorPath = self.actorId.replace("/", "~")
-        requestUrl = f"{APIFY_API_BASE_URL}/acts/{actorPath}/run-sync-get-dataset-items"
+        return await asyncio.to_thread(self._fetchJobsForKeywordSynchronously, keyword, maxJobs)
+
+    def _fetchJobsForKeywordSynchronously(self, keyword: str, maxJobs: int) -> list[dict[str, Any]]:
+        """Run the Apify Python SDK call path for one keyword."""
+
         actorInputPayload = self._buildActorInputPayload(keyword, maxJobs)
-        logger.info("apify_request_started actor=%s keyword=%s max_jobs=%s", self.actorId, keyword, maxJobs)
+        logger.info("apify_sdk_run_started actor=%s keyword=%s max_jobs=%s", self.actorId, keyword, maxJobs)
+        apifyClient = self.apifyClientFactory(self.apiToken)
+        actorRun = apifyClient.actor(self.actorId).call(run_input=actorInputPayload)
+        datasetId = actorRun.get("defaultDatasetId") if isinstance(actorRun, dict) else None
+        if not datasetId:
+            raise ApifyScraperError("Apify actor run did not return a default dataset id.")
 
-        async with httpx.AsyncClient(timeout=self.timeoutSeconds) as httpClient:
-            apifyResponse = await httpClient.post(
-                requestUrl,
-                headers={"Authorization": f"Bearer {self.apiToken}"},
-                json=actorInputPayload,
-            )
-
-        if apifyResponse.status_code >= 400:
-            logger.error("apify_request_failed actor=%s keyword=%s status=%s", self.actorId, keyword, apifyResponse.status_code)
-            raise ApifyScraperError(f"Apify actor failed with HTTP {apifyResponse.status_code}: {apifyResponse.text}")
-
-        responsePayload = apifyResponse.json()
-        if not isinstance(responsePayload, list):
-            raise ApifyScraperError("Apify actor response was not a dataset item array.")
-
-        logger.info("apify_request_finished actor=%s keyword=%s items=%s", self.actorId, keyword, len(responsePayload))
-        return [rawJobItem for rawJobItem in responsePayload if isinstance(rawJobItem, dict)]
+        datasetItems = list(apifyClient.dataset(datasetId).iterate_items())
+        logger.info("apify_sdk_run_finished actor=%s keyword=%s items=%s", self.actorId, keyword, len(datasetItems))
+        return [datasetItem for datasetItem in datasetItems if isinstance(datasetItem, dict)]
 
     def _buildActorInputPayload(self, keyword: str, maxJobs: int) -> dict[str, Any]:
         if self.actorId == "gio21/upwork-jobs-scraper":
@@ -55,10 +56,89 @@ class ApifyUpworkScraper:
         if self.actorId == "upwork-vibe/upwork-job-scraper":
             return {
                 "limit": maxJobs,
+                "searchPeriod": None,
+                "rawUrl": "",
+                "fromDate": "2026-01-01",
+                "toDate": "2026-12-31",
+                "jobCategories": [],
                 "includeKeywords.keywords": [keyword],
                 "includeKeywords.matchTitle": True,
-                "includeKeywords.matchSkills": True,
                 "includeKeywords.matchDescription": True,
+                "includeKeywords.matchSkills": True,
+                "excludeKeywords.keywords": [],
+                "excludeKeywords.matchTitle": True,
+                "excludeKeywords.matchDescription": True,
+                "excludeKeywords.matchSkills": True,
+                "budget.allowUnspecifiedBudget": True,
+                "budget.hourlyRate.min": "5",
+                "budget.hourlyRate.max": "150",
+                "budget.avgHourlyRate.min": "5",
+                "budget.avgHourlyRate.max": "150",
+                "budget.fixedPrice.min": "50",
+                "budget.fixedPrice.max": "10000",
+                "budget.connectsPrice.min": 1,
+                "budget.connectsPrice.max": 10,
+                "budget.jobDurations": [
+                    "UNSPECIFIED",
+                    "UP_TO_ONE_MONTH",
+                    "UP_TO_THREE_MONTHS",
+                    "UP_TO_SIX_MONTHS",
+                    "MORE_THAN_SIX_MONTHS",
+                ],
+                "budget.hourlyWorkloads": [
+                    "UNSPECIFIED",
+                    "LESS_THAN_30_HOURS",
+                    "MORE_THAN_30_HOURS",
+                ],
+                "budget.noAvgHourlyRatePaid": False,
+                "budget.noHireRate": False,
+                "budget.onlyContractToHire": False,
+                "budget.minClientHireRate": 0,
+                "client.companySizeRange": [
+                    "UNSPECIFIED",
+                    "SOLO_ENTERPRENEUR",
+                    "UP_TO_10_EMPLOYEES",
+                    "UP_TO_100_EMPOLOYEES",
+                    "UP_TO_500_EMPLOYEES",
+                    "UP_TO_1K_EMPLOYEES",
+                    "MORE_THAN_1K_EMPLOYEES",
+                ],
+                "client.descriptionLanguage.exclude": [],
+                "client.descriptionLanguage.include": [],
+                "client.hireHistory": ["NONE", "UP_TO", "MORE_THAN"],
+                "client.includeLocations": None,
+                "client.excludeLocations": None,
+                "client.includeIndustry": None,
+                "client.excludeIndustry": None,
+                "client.includeWithNoFeedback": None,
+                "client.totalSpent.min": None,
+                "client.totalSpent.max": None,
+                "client.minFeedbackScore": None,
+                "client.paymentMethodVerified": None,
+                "client.phoneNumberVerified": None,
+                "client.timezones": None,
+                "vendor.type": None,
+                "vendor.languages": None,
+                "vendor.englishProficiency": None,
+                "vendor.experienceLevel": None,
+                "vendor.minCustomJobScore": None,
+                "vendor.includeLocations": None,
+                "vendor.excludeLocations": None,
+                "vendor.includeFeatured": None,
+                "vendor.includeWithoutCountryPreference": None,
+                "vendor.excludeWithQuestions": None,
+                "jobIds": [],
+                "addons.enableClientDetails": False,
+                "addons.enableClientActivity": False,
+                "addons.enableJobAttachments": False,
+                "notifications.shouldSendRunMetadata": True,
+                "notifications.limit": 3,
+                "notifications.telegram.token": None,
+                "notifications.telegram.channelId": None,
+                "notifications.discord.token": None,
+                "notifications.discord.channelId": None,
+                "notifications.slack.token": None,
+                "notifications.slack.channelId": None,
             }
         if self.actorId == "neatrat/upwork-job-scraper":
             return {

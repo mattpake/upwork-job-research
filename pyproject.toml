@@ -5,8 +5,8 @@ description = "Local Upwork market research dashboard with Apify scraping, SQLit
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "apify-client>=3.0.3",
     "fastapi>=0.115.14",
-    "httpx>=0.28.1",
     "itsdangerous>=2.2.0",
     "jinja2>=3.1.6",
     "pydantic>=2.11.7",
@@ -17,6 +17,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "httpx2>=2.4.0",
     "pytest>=8.4.1",
 ]
 

@@ -1,20 +1,20 @@
 # Apify Actor Comparison
 
-This MVP uses `neatrat/upwork-job-scraper` by default because the local `api_docs.md` file supplied for this project contains that actor's endpoint and input schema.
+This MVP uses `upwork-vibe/upwork-job-scraper` by default because the current local `api_docs.md` file supplied for this project contains that actor's endpoint and Python SDK input schema.
 
 ## Compared Actors
 
 | Actor | Input fit | Output fit | Cost signal | Stability signal | Decision |
 | --- | --- | --- | --- | --- | --- |
-| `neatrat/upwork-job-scraper` | Local `api_docs.md` documents `query`, `page`, `pagesToScrape`, `perPage`, and `sort` | Rich fields and managed setup | Listed from $3.20 per 1,000 jobs | Larger usage and rating, but live reliability still depends on Apify actor state | Default actor |
-| `gio21/upwork-jobs-scraper` | `query` plus `max_jobs`, matching one keyword scan per run | Returns job id, title, description, budget, skills, proposals, client country, spend, verified status, and URL | Listed at $1.50 per 1,000 jobs | Recently modified, small but focused usage | Supported fallback |
-| `upwork-vibe/upwork-job-scraper` | Supports keyword filters under `includeKeywords.*` | Broad public job fields and optional paid addons | Listed from $4.50 per 1,000 job results | Fast issue response and good rating | Supported by input builder, not default |
+| `upwork-vibe/upwork-job-scraper` | Current local `api_docs.md` documents `includeKeywords.*`, budget, client, vendor, addon, notification, and `limit` fields | Broad public job fields and optional paid addons | Listed from $4.50 per 1,000 job results | Good match for supplied SDK snippet | Default actor |
+| `neatrat/upwork-job-scraper` | Older docs used `query`, `page`, `pagesToScrape`, `perPage`, and `sort` | Rich fields and managed setup | Listed from $3.20 per 1,000 jobs | No longer matches the supplied docs | Supported fallback |
+| `gio21/upwork-jobs-scraper` | Uses `query` plus `max_jobs` | Returns job id, title, description, budget, skills, proposals, client country, spend, verified status, and URL | Listed at $1.50 per 1,000 jobs | Smaller focused actor | Supported fallback |
 
-## Why `neatrat/upwork-job-scraper`
+## Why `upwork-vibe/upwork-job-scraper`
 
-- The local API docs are for this actor, so the implementation should follow that contract first.
-- The input supports one configured keyword per run with `perPage` and `sort: newest`.
-- Optional filters/cookies from the docs are deliberately not sent by default because the PRD says broad market collection and no Upwork login.
-- The scraper layer still supports changing actors through `UPWORK_RESEARCH_APIFY_ACTOR_ID`.
+- The current local API docs and Python SDK example are for this actor.
+- The input supports one configured keyword per run through `includeKeywords.keywords`.
+- The default payload keeps broad collection enabled and avoids login/cookie fields.
+- The scraper uses the official `apify-client` Python SDK instead of hand-written HTTP calls.
 
 The scraper layer is isolated in `src/scrapers/apify_upwork_scraper.py`, and normalization lives in `src/services/job_normalization_service.py`, so the default actor can be changed with `UPWORK_RESEARCH_APIFY_ACTOR_ID` without rewriting the dashboard.
