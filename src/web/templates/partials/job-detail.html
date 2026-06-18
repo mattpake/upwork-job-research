@@ -1,27 +1,26 @@
-<aside class="surface-panel p-5">
-  {% if selectedJob %}
+<aside class="surface-panel p-5" id="job-detail-panel">
+  <div id="detail-content" class="{{ 'hidden' if not selectedJob else '' }}">
     <p class="text-sm font-semibold text-[var(--color-secondary)]">Selected job</p>
-    <h2 class="mt-1 font-display text-2xl font-bold">{{ selectedJob.title }}</h2>
-    <a class="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-primary)]" href="{{ selectedJob.jobUrl }}" target="_blank" rel="noreferrer"><i class="fa-solid fa-arrow-up-right-from-square"></i>Open on Upwork</a>
+    <h2 id="detail-title" class="mt-1 font-display text-2xl font-bold">{{ selectedJob.title if selectedJob else '' }}</h2>
+    <a id="detail-url" class="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-primary)]" href="{{ selectedJob.jobUrl if selectedJob else '#' }}" target="_blank" rel="noreferrer"><i class="fa-solid fa-arrow-up-right-from-square"></i>Open on Upwork</a>
     <div class="detail-grid">
-      <span>Budget</span><strong>{{ selectedJob.budgetType or "Unknown" }}</strong>
-      <span>Client</span><strong>{{ selectedJob.clientCountry or "Unknown" }}</strong>
-      <span>Spent</span><strong>{{ selectedJob.clientSpent or "Unknown" }}</strong>
-      <span>Proposals</span><strong>{{ selectedJob.proposalsCount or "Unknown" }}</strong>
-      <span>Skills</span><strong>{{ selectedJob.skills | join(", ") or "Unknown" }}</strong>
+      <span>Budget</span><strong id="detail-budget">{{ selectedJob.budgetType if selectedJob else "Unknown" }}</strong>
+      <span>Client</span><strong id="detail-client">{{ selectedJob.clientCountry if selectedJob else "Unknown" }}</strong>
+      <span>Spent</span><strong id="detail-spent">{{ selectedJob.clientSpent if selectedJob else "Unknown" }}</strong>
+      <span>Proposals</span><strong id="detail-proposals">{{ selectedJob.proposalsCount if selectedJob else "Unknown" }}</strong>
+      <span>Skills</span><strong id="detail-skills">{{ selectedJob.skills | join(", ") if selectedJob else "Unknown" }}</strong>
     </div>
     <div class="mt-5">
       <h3 class="font-semibold">Description</h3>
-      <p class="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--color-muted)]">{{ selectedJob.description or "No description captured." }}</p>
+      <p id="detail-description" class="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--color-muted)]">{{ selectedJob.description if selectedJob else "No description captured." }}</p>
     </div>
     <details class="mt-5">
       <summary class="cursor-pointer text-sm font-semibold text-[var(--color-primary)]">Raw JSON preview</summary>
-      <pre class="raw-json">{{ selectedJob.rawJson }}</pre>
+      <pre id="detail-json" class="raw-json">{{ selectedJob.rawJson | tojson(indent=2) if selectedJob else '' }}</pre>
     </details>
-  {% else %}
-    <div class="empty-state min-h-[420px]">
-      <h3>No selected job</h3>
-      <p>Collected jobs will appear here with full description, client metadata, skills, status, and raw scraper payload.</p>
-    </div>
-  {% endif %}
+  </div>
+  <div id="detail-empty" class="empty-state min-h-[420px] {{ 'hidden' if selectedJob else '' }}">
+    <h3>No selected job</h3>
+    <p>Collected jobs will appear here with full description, client metadata, skills, status, and raw scraper payload.</p>
+  </div>
 </aside>

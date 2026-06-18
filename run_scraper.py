@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from src.core.config import loadApplicationSettings, loadConfiguredKeywords
 from src.repositories.job_repository import JobRepository
@@ -9,6 +10,7 @@ from src.services.scan_orchestration_service import UpworkScanOrchestrator
 async def runConfiguredUpworkScan() -> None:
     """Run the configured Upwork scan from the command line."""
 
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     applicationSettings = loadApplicationSettings()
     configuredKeywords = loadConfiguredKeywords(applicationSettings.keywordsPath)
     jobRepository = JobRepository(applicationSettings.databasePath)

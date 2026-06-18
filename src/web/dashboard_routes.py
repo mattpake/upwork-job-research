@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Form, Query, Request
+from fastapi import APIRouter, Form, Query, Request, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
@@ -71,16 +71,9 @@ async def renderDashboard(
     )
 
 
-@dashboardRouter.post("/scan")
-async def runUpworkScan(request: Request) -> RedirectResponse:
+async def _runBackgroundScan() -> None:
     applicationSettings = loadApplicationSettings()
     configuredKeywords = loadConfiguredKeywords(applicationSettings.keywordsPath)
-    logger.info(
-        "dashboard_scan_requested keywords=%s actor=%s results_per_keyword=%s",
-        len(configuredKeywords),
-        applicationSettings.apifyActorId,
-        applicationSettings.resultsPerKeyword,
-    )
     jobRepository = JobRepository(applicationSettings.databasePath)
     apifyUpworkScraper = ApifyUpworkScraper(
         applicationSettings.apifyApiToken,
@@ -93,16 +86,27 @@ async def runUpworkScan(request: Request) -> RedirectResponse:
         applicationSettings.resultsPerKeyword,
         applicationSettings.scanConcurrencyLimit,
     )
-    scanSummary = await scanOrchestrator.runKeywordScan(configuredKeywords)
+    try:
+        await scanOrchestrator.runKeywordScan(configuredKeywords)
+    except Exception:
+        logger.exception("background_scan_failed")
+
+
+@dashboardRouter.post("/scan")
+async def runUpworkScan(request: Request, background_tasks: BackgroundTasks) -> RedirectResponse:
+    applicationSettings = loadApplicationSettings()
+    configuredKeywords = loadConfiguredKeywords(applicationSettings.keywordsPath)
     logger.info(
-        "dashboard_scan_completed fetched=%s new=%s duplicates=%s errors=%s",
-        scanSummary.totalJobsFetched,
-        scanSummary.newJobsAdded,
-        scanSummary.duplicatesFound,
-        len(scanSummary.errors),
+        "dashboard_scan_requested keywords=%s actor=%s results_per_keyword=%s",
+        len(configuredKeywords),
+        applicationSettings.apifyActorId,
+        applicationSettings.resultsPerKeyword,
     )
+    
+    background_tasks.add_task(_runBackgroundScan)
+    
     if hasattr(request, "session"):
-        request.session["scanSummary"] = scanSummary.model_dump()
+        request.session["scanSummary"] = {"errors": [], "message": "Scan started in the background. Please wait a few minutes and refresh."}
     return RedirectResponse("/", status_code=303)
 
 

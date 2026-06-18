@@ -49,3 +49,53 @@ function showScanOverlay() {
     console.info("[Upwork Research] scan_phase", scanPhases[activePhaseIndex]);
   }, 1800);
 }
+
+const jobRows = document.querySelectorAll("[data-job-row]");
+const detailContent = document.getElementById("detail-content");
+const detailEmpty = document.getElementById("detail-empty");
+const detailTitle = document.getElementById("detail-title");
+const detailUrl = document.getElementById("detail-url");
+const detailBudget = document.getElementById("detail-budget");
+const detailClient = document.getElementById("detail-client");
+const detailSpent = document.getElementById("detail-spent");
+const detailProposals = document.getElementById("detail-proposals");
+const detailSkills = document.getElementById("detail-skills");
+const detailDescription = document.getElementById("detail-description");
+const detailJson = document.getElementById("detail-json");
+
+jobRows.forEach(row => {
+  row.addEventListener("click", (e) => {
+    // Ignore clicks on forms, links, or select dropdowns
+    if (e.target.closest("form") || e.target.closest("select") || e.target.closest("a")) return;
+    
+    // Read the embedded JSON payload
+    const jobData = JSON.parse(row.dataset.jobJson);
+    
+    // Toggle empty state
+    if (detailContent) detailContent.classList.remove("hidden");
+    if (detailEmpty) detailEmpty.classList.add("hidden");
+    
+    // Populate simple fields
+    if (detailTitle) detailTitle.textContent = jobData.title || "";
+    if (detailUrl) detailUrl.href = jobData.jobUrl || "#";
+    if (detailBudget) detailBudget.textContent = jobData.budgetType || "Unknown";
+    if (detailClient) detailClient.textContent = jobData.clientCountry || "Unknown";
+    if (detailSpent) detailSpent.textContent = jobData.clientSpent || "Unknown";
+    if (detailProposals) detailProposals.textContent = jobData.proposalsCount || "Unknown";
+    
+    // Populate complex fields
+    if (detailSkills) {
+      detailSkills.textContent = (jobData.skills && jobData.skills.length > 0) 
+        ? jobData.skills.join(", ") 
+        : "Unknown";
+    }
+    
+    if (detailDescription) {
+      detailDescription.textContent = jobData.description || "No description captured.";
+    }
+    
+    if (detailJson) {
+      detailJson.textContent = JSON.stringify(jobData.rawJson, null, 2);
+    }
+  });
+});

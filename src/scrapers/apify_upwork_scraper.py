@@ -2,8 +2,6 @@ import asyncio
 import logging
 from typing import Any
 
-from apify_client import ApifyClient
-
 
 logger = logging.getLogger(__name__)
 
@@ -20,11 +18,20 @@ class ApifyUpworkScraper:
         apiToken: str,
         actorId: str,
         timeoutSeconds: int,
-        apifyClientFactory=ApifyClient,
+        apifyClientFactory=None,
     ) -> None:
         self.apiToken = apiToken
         self.actorId = actorId
         self.timeoutSeconds = timeoutSeconds
+        # If no factory provided, try to import the real ApifyClient now.
+        if apifyClientFactory is None:
+            try:
+                from apify_client import ApifyClient as _ApifyClient
+
+                apifyClientFactory = _ApifyClient
+            except Exception:
+                apifyClientFactory = None
+
         self.apifyClientFactory = apifyClientFactory
 
     async def fetchJobsForKeyword(self, keyword: str, maxJobs: int) -> list[dict[str, Any]]:
@@ -39,10 +46,28 @@ class ApifyUpworkScraper:
         """Run the Apify Python SDK call path for one keyword."""
 
         actorInputPayload = self._buildActorInputPayload(keyword, maxJobs)
+        # Ensure `rawUrl` is always a string (Apify actor validation rejects nulls).
+        if "rawUrl" in actorInputPayload and not isinstance(actorInputPayload["rawUrl"], str):
+            actorInputPayload["rawUrl"] = ""
+        # Some actor versions (e.g., upwork-vibe/upwork-job-scraper) reject the `rawUrl` property entirely.
+        if self.actorId == "upwork-vibe/upwork-job-scraper" and "rawUrl" in actorInputPayload:
+            del actorInputPayload["rawUrl"]
+        # Remove any keys with None values to avoid API validation errors.
+        keys_with_none = [k for k, v in actorInputPayload.items() if v is None]
+        for k in keys_with_none:
+            del actorInputPayload[k]
         logger.info("apify_sdk_run_started actor=%s keyword=%s max_jobs=%s", self.actorId, keyword, maxJobs)
+        if not self.apifyClientFactory:
+            raise ApifyScraperError("Apify client factory is not available (missing apify_client package).")
+
         apifyClient = self.apifyClientFactory(self.apiToken)
         actorRun = apifyClient.actor(self.actorId).call(run_input=actorInputPayload)
-        datasetId = actorRun.get("defaultDatasetId") if isinstance(actorRun, dict) else None
+        # Actor client may return either a dict (older SDK) or an object (newer SDK).
+        datasetId = None
+        if isinstance(actorRun, dict):
+            datasetId = actorRun.get("defaultDatasetId") or actorRun.get("default_dataset_id")
+        else:
+            datasetId = getattr(actorRun, "default_dataset_id", None) or getattr(actorRun, "defaultDatasetId", None)
         if not datasetId:
             raise ApifyScraperError("Apify actor run did not return a default dataset id.")
 
@@ -143,7 +168,7 @@ class ApifyUpworkScraper:
         if self.actorId == "neatrat/upwork-job-scraper":
             return {
                 "query": keyword,
-                "rawUrl": None,
+                "rawUrl": "",
                 "page": 1,
                 "pagesToScrape": 1,
                 "perPage": maxJobs,

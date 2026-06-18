@@ -11,7 +11,7 @@ def normalizeRawUpworkJob(rawJobPayload: dict[str, Any], searchKeyword: str) -> 
     """Normalize raw Upwork actor output into the storage model."""
 
     externalJobId = _firstString(rawJobPayload, ["jobId", "job_id", "id", "job_uid", "uid"])
-    jobUrl = _firstString(rawJobPayload, ["url", "job_url", "link"])
+    jobUrl = _firstString(rawJobPayload, ["url", "job_url", "link", "externalLink"])
     title = _firstString(rawJobPayload, ["title", "job_title"]) or "Untitled Upwork job"
     description = _firstString(rawJobPayload, ["description", "job_description"])
     contractType = _firstString(rawJobPayload, ["contractType", "type", "job_type"])

@@ -14,7 +14,7 @@
       </thead>
       <tbody>
         {% for storedJob in storedJobs %}
-          <tr data-job-row data-job-id="{{ storedJob.id }}">
+          <tr data-job-row data-job-json="{{ storedJob.model_dump_json() | escape }}" class="cursor-pointer hover:bg-[var(--color-surface-hover)]">
             <td>
               <a class="job-link" href="{{ storedJob.jobUrl or '#' }}" target="_blank" rel="noreferrer">{{ storedJob.title }}</a>
               <p class="line-clamp-2 text-xs text-[var(--color-muted)]">{{ storedJob.description or "No description captured" }}</p>
