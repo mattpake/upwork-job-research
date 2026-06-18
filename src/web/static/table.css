@@ -3,7 +3,14 @@
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--color-outline);
-  padding: 16px;
+  padding: 14px 16px;
+}
+
+.section-heading p {
+  margin-top: 2px;
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .research-table {
@@ -15,14 +22,14 @@
 .research-table th,
 .research-table td {
   border-bottom: 1px solid var(--color-outline);
-  padding: 14px 16px;
+  padding: 12px 16px;
   text-align: left;
   vertical-align: top;
   font-size: 13px;
 }
 
 .research-table th {
-  background: var(--color-surface-variant);
+  background: #f7faf4;
   color: var(--color-muted);
   font-weight: 700;
 }

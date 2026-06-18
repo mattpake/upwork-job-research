@@ -1,5 +1,5 @@
-<section class="surface-panel p-4">
-  <form class="grid gap-3 md:grid-cols-2 xl:grid-cols-6" method="get">
+<section class="surface-panel filter-panel">
+  <form class="filter-grid" method="get">
     <label class="field-label">Keyword
       <select class="field-control" name="keyword">
         <option value="">All keywords</option>
@@ -51,9 +51,9 @@
     <label class="field-label">Posted after
       <input class="field-control" name="posted_after" type="date" value="{{ activeFilters.posted_after or '' }}">
     </label>
-    <div class="flex items-end gap-2">
-      <button class="secondary-button" type="submit"><i class="fa-solid fa-sliders"></i>Filter</button>
-      <a class="ghost-button" href="/export.csv?{{ request.query_params }}"><i class="fa-solid fa-file-arrow-down"></i>Export CSV</a>
+    <div class="filter-actions">
+      <button class="secondary-button" type="submit">Filter</button>
+      <a class="ghost-button" href="/export.csv?{{ request.query_params }}">Export CSV</a>
     </div>
   </form>
 </section>

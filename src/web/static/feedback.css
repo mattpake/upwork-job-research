@@ -1,0 +1,54 @@
+.filter-panel,
+.error-panel,
+.scan-result-panel {
+  border: 1px solid var(--color-outline);
+  border-radius: 8px;
+  background: var(--color-surface);
+  padding: 14px;
+}
+
+.scan-result-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.scan-result-panel p {
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.scan-result-panel h2 {
+  margin-top: 4px;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.scan-result-panel span {
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.scan-result-panel.is-success {
+  border-color: rgba(20, 168, 0, 0.28);
+}
+
+.scan-result-panel.is-success span {
+  background: var(--color-primary-container);
+  color: var(--color-success);
+}
+
+.scan-result-panel.is-error,
+.error-panel {
+  border-color: rgba(180, 35, 24, 0.32);
+}
+
+.scan-result-panel.is-error span,
+.error-panel {
+  color: var(--color-error);
+}

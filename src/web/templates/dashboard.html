@@ -13,18 +13,18 @@
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/layout.css">
+    <link rel="stylesheet" href="/static/feedback.css">
     <link rel="stylesheet" href="/static/scan-overlay.css">
     <link rel="stylesheet" href="/static/table.css">
     <link rel="stylesheet" href="/static/detail.css">
   </head>
-  <body class="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
-    <main class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
-      <header class="dashboard-header grid gap-4 p-5 lg:grid-cols-[1fr_auto] lg:items-center">
-        <div>
-          <h1 class="font-display text-3xl font-bold tracking-normal text-[var(--color-on-surface)]">Upwork Job Research</h1>
-          <p class="mt-2 max-w-3xl text-sm leading-6 text-[var(--color-muted)]">
-            Scan configured keywords, collect raw Upwork market data, merge duplicates, and export clean CSV research.
-          </p>
+  <body class="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]" data-scan-summary="{{ scanState }}" data-scan-errors="{{ scanSummary.errors | length if scanSummary else 0 }}">
+    <main class="mx-auto flex min-h-screen w-full max-w-[1360px] flex-col gap-4 px-4 py-5 sm:px-6 lg:px-8">
+      <header class="dashboard-header">
+        <div class="header-copy">
+          <h1 class="font-display text-2xl font-bold tracking-normal text-[var(--color-on-surface)] sm:text-3xl">Upwork Job Research</h1>
+          <p>Scan configured keywords, collect raw market data, merge duplicates, and export clean CSV research.</p>
         </div>
         <form action="/scan" method="post" data-loading-form>
           <button class="primary-button" type="submit">
@@ -34,11 +34,12 @@
       </header>
 
       {% if scanSummary %}
-        <section class="grid gap-3 md:grid-cols-4">
-          <div class="metric-card"><span>Total fetched</span><strong>{{ scanSummary.totalJobsFetched }}</strong></div>
-          <div class="metric-card"><span>New jobs</span><strong>{{ scanSummary.newJobsAdded }}</strong></div>
-          <div class="metric-card"><span>Duplicates</span><strong>{{ scanSummary.duplicatesFound }}</strong></div>
-          <div class="metric-card"><span>Errors</span><strong>{{ scanSummary.errors | length }}</strong></div>
+        <section class="scan-result-panel {{ 'is-error' if scanSummary.errors else 'is-success' }}">
+          <div>
+            <p>{{ 'Scan finished with errors' if scanSummary.errors else 'Scan finished' }}</p>
+            <h2>{{ scanSummary.newJobsAdded }} new jobs, {{ scanSummary.duplicatesFound }} duplicates, {{ scanSummary.totalJobsFetched }} fetched</h2>
+          </div>
+          <span>{{ scanSummary.errors | length }} errors</span>
         </section>
         {% if scanSummary.errors %}
           <section class="error-panel">

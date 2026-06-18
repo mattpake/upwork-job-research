@@ -24,21 +24,9 @@
 .empty-state {
   display: grid;
   place-items: center;
-  gap: 8px;
-  padding: 48px 24px;
+  gap: 10px;
+  padding: 56px 24px;
   text-align: center;
-}
-
-.empty-mark {
-  display: grid;
-  width: 56px;
-  height: 56px;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--color-primary-container);
-  color: var(--color-primary);
-  font-size: 24px;
-  font-weight: 700;
 }
 
 .empty-state h3 {

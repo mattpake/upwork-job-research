@@ -1,8 +1,8 @@
 <div class="surface-panel overflow-hidden">
   <div class="section-heading">
     <div>
-      <p class="text-sm font-semibold text-[var(--color-secondary)]">{{ storedJobs | length }} jobs</p>
-      <h2 class="font-display text-xl font-bold"><i class="fa-solid fa-briefcase"></i> Research queue</h2>
+      <h2 class="font-display text-lg font-bold">Research queue</h2>
+      <p>{{ storedJobs | length }} jobs collected</p>
     </div>
   </div>
   <div class="overflow-x-auto">
@@ -37,9 +37,8 @@
           <tr>
             <td colspan="6">
               <div class="empty-state">
-                <div class="empty-mark"><i class="fa-brands fa-upwork"></i></div>
                 <h3>No jobs collected yet</h3>
-                <p>Run the first scan after adding your Apify token to collect live Upwork market data.</p>
+                <p>Run a scan to collect live Upwork market data. Scan progress and errors will appear above the filters.</p>
               </div>
             </td>
           </tr>

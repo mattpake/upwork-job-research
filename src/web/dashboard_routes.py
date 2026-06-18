@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Form, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
@@ -12,6 +14,7 @@ from src.services.scan_orchestration_service import UpworkScanOrchestrator
 
 templates = Jinja2Templates(directory="src/web/templates")
 dashboardRouter = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @dashboardRouter.get("/", response_class=HTMLResponse)
@@ -47,6 +50,10 @@ async def renderDashboard(
     )
     storedJobs = jobRepository.listJobs(activeFilters)
     selectedJob = storedJobs[0] if storedJobs else None
+    scanSummary = request.session.pop("scanSummary", None) if hasattr(request, "session") else None
+    scanState = "none"
+    if scanSummary:
+        scanState = "error" if scanSummary.get("errors") else "success"
     return templates.TemplateResponse(
         request,
         "dashboard.html",
@@ -57,7 +64,8 @@ async def renderDashboard(
             "selectedJob": selectedJob,
             "activeFilters": activeFilters,
             "validJobStatuses": VALID_JOB_STATUSES,
-            "scanSummary": request.session.pop("scanSummary", None) if hasattr(request, "session") else None,
+            "scanSummary": scanSummary,
+            "scanState": scanState,
             "scanError": request.session.pop("scanError", None) if hasattr(request, "session") else None,
         },
     )
@@ -67,6 +75,12 @@ async def renderDashboard(
 async def runUpworkScan(request: Request) -> RedirectResponse:
     applicationSettings = loadApplicationSettings()
     configuredKeywords = loadConfiguredKeywords(applicationSettings.keywordsPath)
+    logger.info(
+        "dashboard_scan_requested keywords=%s actor=%s results_per_keyword=%s",
+        len(configuredKeywords),
+        applicationSettings.apifyActorId,
+        applicationSettings.resultsPerKeyword,
+    )
     jobRepository = JobRepository(applicationSettings.databasePath)
     apifyUpworkScraper = ApifyUpworkScraper(
         applicationSettings.apifyApiToken,
@@ -80,6 +94,13 @@ async def runUpworkScan(request: Request) -> RedirectResponse:
         applicationSettings.scanConcurrencyLimit,
     )
     scanSummary = await scanOrchestrator.runKeywordScan(configuredKeywords)
+    logger.info(
+        "dashboard_scan_completed fetched=%s new=%s duplicates=%s errors=%s",
+        scanSummary.totalJobsFetched,
+        scanSummary.newJobsAdded,
+        scanSummary.duplicatesFound,
+        len(scanSummary.errors),
+    )
     if hasattr(request, "session"):
         request.session["scanSummary"] = scanSummary.model_dump()
     return RedirectResponse("/", status_code=303)

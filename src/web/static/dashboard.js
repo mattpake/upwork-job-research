@@ -9,6 +9,13 @@ const scanPhases = [
   "Saving fresh research to SQLite"
 ];
 let scanPhaseTimerId = null;
+const scanSummaryState = document.body.dataset.scanSummary;
+const scanErrorCount = document.body.dataset.scanErrors;
+
+console.info("[Upwork Research] dashboard_loaded", {
+  scanSummaryState,
+  scanErrorCount
+});
 
 loadingForms.forEach((loadingForm) => {
   loadingForm.addEventListener("submit", () => {
@@ -20,6 +27,7 @@ loadingForms.forEach((loadingForm) => {
     submitButton.classList.add("is-loading");
     submitButton.setAttribute("disabled", "disabled");
     buttonLabel.textContent = "Scanning Upwork";
+    console.info("[Upwork Research] scan_submitted");
     showScanOverlay();
   });
 });
@@ -33,9 +41,11 @@ function showScanOverlay() {
   scanOverlay.classList.add("is-visible");
   scanOverlay.setAttribute("aria-hidden", "false");
   scanPhase.textContent = scanPhases[activePhaseIndex];
+  console.info("[Upwork Research] scan_phase", scanPhases[activePhaseIndex]);
   window.clearInterval(scanPhaseTimerId);
   scanPhaseTimerId = window.setInterval(() => {
     activePhaseIndex = (activePhaseIndex + 1) % scanPhases.length;
     scanPhase.textContent = scanPhases[activePhaseIndex];
+    console.info("[Upwork Research] scan_phase", scanPhases[activePhaseIndex]);
   }, 1800);
 }
