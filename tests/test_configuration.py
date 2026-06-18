@@ -26,10 +26,12 @@ def test_load_configured_keywords_trims_and_deduplicates_keywords(tmp_path):
 
 
 def test_load_application_settings_requires_apify_token_for_live_scans(monkeypatch):
-    monkeypatch.delenv("APIFY_API_TOKEN", raising=False)
+    monkeypatch.setenv("APIFY_API_TOKEN", "")
 
     loadedSettings = loadApplicationSettings()
 
     assert loadedSettings.apifyApiToken == ""
     assert loadedSettings.apifyActorId == "gio21/upwork-jobs-scraper"
     assert loadedSettings.resultsPerKeyword == 50
+    assert loadedSettings.dashboardHost == "127.0.0.1"
+    assert loadedSettings.dashboardPort == 8000

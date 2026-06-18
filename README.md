@@ -59,7 +59,7 @@ Copy-Item .env.example .env
 Edit `.env` and set `APIFY_API_TOKEN`.
 
 ```powershell
-uv run uvicorn main:app --reload
+uv run .\main.py
 ```
 
 Open:
@@ -78,6 +78,8 @@ UPWORK_RESEARCH_REQUEST_TIMEOUT_SECONDS=120
 UPWORK_RESEARCH_KEYWORDS_PATH=config/keywords.json
 UPWORK_RESEARCH_DATABASE_PATH=database/upwork_jobs.db
 UPWORK_RESEARCH_SESSION_SECRET=replace-with-a-long-random-local-secret
+UPWORK_RESEARCH_DASHBOARD_HOST=127.0.0.1
+UPWORK_RESEARCH_DASHBOARD_PORT=8000
 ```
 
 | Variable | Description |
@@ -89,6 +91,8 @@ UPWORK_RESEARCH_SESSION_SECRET=replace-with-a-long-random-local-secret
 | `UPWORK_RESEARCH_KEYWORDS_PATH` | JSON file containing the keyword list. |
 | `UPWORK_RESEARCH_DATABASE_PATH` | Local SQLite database path. |
 | `UPWORK_RESEARCH_SESSION_SECRET` | Local session signing secret for scan summary messages. |
+| `UPWORK_RESEARCH_DASHBOARD_HOST` | Local server host used by `uv run .\main.py`. |
+| `UPWORK_RESEARCH_DASHBOARD_PORT` | Local server port used by `uv run .\main.py`. |
 
 ## Project Structure
 
@@ -136,7 +140,7 @@ This MVP is designed for local use first.
 Run locally:
 
 ```powershell
-uv run uvicorn main:app --host 127.0.0.1 --port 8000
+uv run .\main.py
 ```
 
 Future VPS cron example:

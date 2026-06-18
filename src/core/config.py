@@ -12,6 +12,8 @@ DEFAULT_KEYWORDS_PATH = Path("config/keywords.json")
 DEFAULT_DATABASE_PATH = Path("database/upwork_jobs.db")
 DEFAULT_REQUEST_TIMEOUT_SECONDS = 120
 DEFAULT_SESSION_SECRET = "local-upwork-research-dashboard-session"
+DEFAULT_DASHBOARD_HOST = "127.0.0.1"
+DEFAULT_DASHBOARD_PORT = 8000
 
 
 @dataclass(frozen=True)
@@ -25,6 +27,8 @@ class ApplicationSettings:
     databasePath: Path
     requestTimeoutSeconds: int
     sessionSecret: str
+    dashboardHost: str
+    dashboardPort: int
 
 
 def loadApplicationSettings() -> ApplicationSettings:
@@ -35,6 +39,7 @@ def loadApplicationSettings() -> ApplicationSettings:
     requestTimeoutSeconds = int(
         os.getenv("UPWORK_RESEARCH_REQUEST_TIMEOUT_SECONDS", str(DEFAULT_REQUEST_TIMEOUT_SECONDS))
     )
+    dashboardPort = int(os.getenv("UPWORK_RESEARCH_DASHBOARD_PORT", str(DEFAULT_DASHBOARD_PORT)))
 
     return ApplicationSettings(
         apifyApiToken=os.getenv("APIFY_API_TOKEN", ""),
@@ -44,6 +49,8 @@ def loadApplicationSettings() -> ApplicationSettings:
         databasePath=Path(os.getenv("UPWORK_RESEARCH_DATABASE_PATH", str(DEFAULT_DATABASE_PATH))),
         requestTimeoutSeconds=requestTimeoutSeconds,
         sessionSecret=os.getenv("UPWORK_RESEARCH_SESSION_SECRET", DEFAULT_SESSION_SECRET),
+        dashboardHost=os.getenv("UPWORK_RESEARCH_DASHBOARD_HOST", DEFAULT_DASHBOARD_HOST),
+        dashboardPort=dashboardPort,
     )
 
 
