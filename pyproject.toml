@@ -1,7 +1,19 @@
 [project]
 name = "upwork-job-research"
 version = "0.1.0"
-description = "Add your description here"
+description = "Local Upwork market research dashboard with Apify scraping, SQLite storage, deduplication, filtering, and CSV export."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "fastapi>=0.115.14",
+    "httpx>=0.28.1",
+    "jinja2>=3.1.6",
+    "pydantic>=2.11.7",
+    "python-multipart>=0.0.20",
+    "uvicorn>=0.35.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+]
