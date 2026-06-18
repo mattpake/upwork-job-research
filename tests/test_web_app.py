@@ -21,6 +21,7 @@ def test_dashboard_home_renders_run_scan_action(tmp_path, monkeypatch):
     assert '<i class="fa-brands fa-upwork" aria-hidden="true"></i>' not in response.text
     assert 'data-scan-summary="none"' in response.text
     assert "Research queue" in response.text
+    assert "research-table" in response.text
 
 
 def test_status_endpoint_updates_existing_job_status(tmp_path, monkeypatch):

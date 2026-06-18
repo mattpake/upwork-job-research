@@ -15,8 +15,8 @@
 
 .research-table {
   width: 100%;
-  min-width: 980px;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .research-table th,
@@ -26,6 +26,7 @@
   text-align: left;
   vertical-align: top;
   font-size: 13px;
+  overflow-wrap: anywhere;
 }
 
 .research-table th {
@@ -44,7 +45,37 @@
 
 .job-link {
   display: inline-flex;
-  max-width: 420px;
+  max-width: 100%;
   color: var(--color-on-surface);
   font-weight: 700;
+}
+
+.research-table th:nth-child(1),
+.research-table td:nth-child(1) {
+  width: 30%;
+}
+
+.research-table th:nth-child(2),
+.research-table td:nth-child(2) {
+  width: 18%;
+}
+
+.research-table th:nth-child(3),
+.research-table td:nth-child(3),
+.research-table th:nth-child(4),
+.research-table td:nth-child(4),
+.research-table th:nth-child(5),
+.research-table td:nth-child(5) {
+  width: 14%;
+}
+
+.research-table th:nth-child(6),
+.research-table td:nth-child(6) {
+  width: 10%;
+}
+
+@media (max-width: 900px) {
+  .research-table {
+    min-width: 760px;
+  }
 }
