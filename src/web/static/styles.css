@@ -38,20 +38,6 @@ body {
     var(--color-surface);
 }
 
-.brand-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  border: 1px solid rgba(20, 168, 0, 0.22);
-  border-radius: 999px;
-  background: var(--color-primary-container);
-  padding: 6px 10px;
-  color: var(--color-secondary);
-  font-size: 12px;
-  font-weight: 800;
-}
-
 .primary-button,
 .secondary-button,
 .ghost-button {
@@ -68,10 +54,10 @@ body {
 }
 
 .primary-button {
-  min-width: 188px;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-strong));
+  min-width: 176px;
+  background: var(--color-primary);
   color: white;
-  box-shadow: 0 14px 30px rgba(20, 168, 0, 0.28);
+  box-shadow: 0 12px 24px rgba(20, 168, 0, 0.22);
 }
 
 .secondary-button {
