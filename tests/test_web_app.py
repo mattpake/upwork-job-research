@@ -54,7 +54,11 @@ def test_status_endpoint_updates_existing_job_status(tmp_path, monkeypatch):
     )
 
     testClient = TestClient(createApplication())
-    response = testClient.post(f"/jobs/{insertSummary.insertedJobIds[0]}/status", data={"status": "Interesting"})
+    response = testClient.post(
+        f"/jobs/{insertSummary.insertedJobIds[0]}/status",
+        data={"status": "Interesting"},
+        follow_redirects=False,
+    )
 
     assert response.status_code == 303
     assert JobRepository(databasePath).getJobById(insertSummary.insertedJobIds[0]).status == "Interesting"

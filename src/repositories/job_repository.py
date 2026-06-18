@@ -5,43 +5,10 @@ from pathlib import Path
 from typing import Any
 
 from src.models.job_models import NormalizedUpworkJob, StoredUpworkJob, UpsertJobsSummary
-
-
-JOB_TABLE_SCHEMA = """
-CREATE TABLE IF NOT EXISTS jobs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    external_job_id TEXT,
-    job_url TEXT,
-    title TEXT NOT NULL,
-    description TEXT,
-    search_keyword TEXT NOT NULL,
-    matched_keywords TEXT NOT NULL,
-    skills TEXT NOT NULL,
-    budget_type TEXT,
-    fixed_budget REAL,
-    hourly_min REAL,
-    hourly_max REAL,
-    client_country TEXT,
-    client_spent TEXT,
-    client_rating REAL,
-    payment_verified INTEGER,
-    proposals_count TEXT,
-    posted_at TEXT,
-    scraped_at TEXT NOT NULL,
-    last_seen_at TEXT NOT NULL,
-    status TEXT NOT NULL,
-    raw_json TEXT NOT NULL,
-    client_hires TEXT,
-    client_jobs_posted TEXT,
-    client_avg_hourly_rate_paid TEXT,
-    client_total_reviews TEXT,
-    job_duration TEXT,
-    experience_level TEXT,
-    connects_required TEXT,
-    category TEXT,
-    subcategory TEXT
-);
-"""
+from src.repositories.job_database_schema import JOB_TABLE_INDEXES, JOB_TABLE_SCHEMA
+from src.repositories.job_filter_builder import appendJobFilterClauses
+from src.repositories.job_insert_mapper import INSERT_JOB_SQL, buildJobInsertParameters
+from src.repositories.job_row_mapper import convertJobRowToStoredJob
 
 
 class JobRepository:
@@ -56,10 +23,8 @@ class JobRepository:
         self.databasePath.parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as databaseConnection:
             databaseConnection.execute(JOB_TABLE_SCHEMA)
-            databaseConnection.execute("CREATE INDEX IF NOT EXISTS idx_jobs_external_id ON jobs(external_job_id)")
-            databaseConnection.execute("CREATE INDEX IF NOT EXISTS idx_jobs_url ON jobs(job_url)")
-            databaseConnection.execute("CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status)")
-            databaseConnection.execute("CREATE INDEX IF NOT EXISTS idx_jobs_scraped_at ON jobs(scraped_at)")
+            for indexStatement in JOB_TABLE_INDEXES:
+                databaseConnection.execute(indexStatement)
 
     def upsertNormalizedJobs(self, normalizedJobs: list[NormalizedUpworkJob]) -> UpsertJobsSummary:
         """Insert new jobs and merge duplicate keyword matches."""
@@ -94,12 +59,12 @@ class JobRepository:
         queryClauses: list[str] = []
         queryParameters: list[Any] = []
         activeFilters = filters or {}
-        self._appendFilterClauses(queryClauses, queryParameters, activeFilters)
+        appendJobFilterClauses(queryClauses, queryParameters, activeFilters)
         whereClause = f" WHERE {' AND '.join(queryClauses)}" if queryClauses else ""
         selectQuery = f"SELECT * FROM jobs{whereClause} ORDER BY scraped_at DESC, id DESC"
         with self._connect() as databaseConnection:
             jobRows = databaseConnection.execute(selectQuery, queryParameters).fetchall()
-        return [self._rowToStoredJob(jobRow) for jobRow in jobRows]
+        return [convertJobRowToStoredJob(jobRow) for jobRow in jobRows]
 
     def getJobById(self, jobId: int) -> StoredUpworkJob:
         """Load one stored job by database id."""
@@ -109,7 +74,7 @@ class JobRepository:
             jobRow = databaseConnection.execute("SELECT * FROM jobs WHERE id = ?", (jobId,)).fetchone()
         if jobRow is None:
             raise ValueError(f"Job not found: {jobId}")
-        return self._rowToStoredJob(jobRow)
+        return convertJobRowToStoredJob(jobRow)
 
     def updateJobStatus(self, jobId: int, status: str) -> None:
         """Update the manual dashboard status for one job."""
@@ -173,52 +138,19 @@ class JobRepository:
         )
 
     def _insertJob(self, databaseConnection: sqlite3.Connection, normalizedJob: NormalizedUpworkJob) -> int:
-        insertCursor = databaseConnection.execute(
-            """
-            INSERT INTO jobs (
-                external_job_id, job_url, title, description, search_keyword, matched_keywords,
-                skills, budget_type, fixed_budget, hourly_min, hourly_max, client_country,
-                client_spent, client_rating, payment_verified, proposals_count, posted_at,
-                scraped_at, last_seen_at, status, raw_json, client_hires, client_jobs_posted,
-                client_avg_hourly_rate_paid, client_total_reviews, job_duration, experience_level,
-                connects_required, category, subcategory
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            self._buildInsertParameters(normalizedJob),
-        )
+        insertCursor = databaseConnection.execute(INSERT_JOB_SQL, buildJobInsertParameters(normalizedJob))
         return int(insertCursor.lastrowid)
 
-    def _buildInsertParameters(self, normalizedJob: NormalizedUpworkJob) -> tuple[Any, ...]:
-        return (
-            normalizedJob.externalJobId,
-            normalizedJob.jobUrl,
-            normalizedJob.title,
-            normalizedJob.description,
-            normalizedJob.searchKeyword,
-            json.dumps(normalizedJob.matchedKeywords),
-            json.dumps(normalizedJob.skills),
-            normalizedJob.budgetType,
-            normalizedJob.fixedBudget,
-            normalizedJob.hourlyMin,
-            normalizedJob.hourlyMax,
-            normalizedJob.clientCountry,
-            normalizedJob.clientSpent,
-            normalizedJob.clientRating,
-            int(normalizedJob.paymentVerified) if normalizedJob.paymentVerified is not None else None,
-            normalizedJob.proposalsCount,
-            normalizedJob.postedAt,
-            normalizedJob.scrapedAt,
-            normalizedJob.lastSeenAt,
-            normalizedJob.status,
-            json.dumps(normalizedJob.rawJson, ensure_ascii=True),
-            normalizedJob.clientHires,
-            normalizedJob.clientJobsPosted,
-            normalizedJob.clientAvgHourlyRatePaid,
-            normalizedJob.clientTotalReviews,
-            normalizedJob.jobDuration,
-            normalizedJob.experienceLevel,
-            normalizedJob.connectsRequired,
-            normalizedJob.category,
-            normalizedJob.subcategory,
-        )
+def _mergeUniqueValues(existingValues: list[str], newValues: list[str]) -> list[str]:
+    mergedValues: list[str] = []
+    seenValueKeys: set[str] = set()
+    for candidateValue in [*existingValues, *newValues]:
+        valueKey = candidateValue.casefold()
+        if valueKey not in seenValueKeys:
+            mergedValues.append(candidateValue)
+            seenValueKeys.add(valueKey)
+    return mergedValues
 
+
+def _chooseRicherRawJson(existingRawJson: dict[str, Any], newRawJson: dict[str, Any]) -> dict[str, Any]:
+    return newRawJson if len(json.dumps(newRawJson)) > len(json.dumps(existingRawJson)) else existingRawJson

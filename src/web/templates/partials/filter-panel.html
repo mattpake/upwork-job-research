@@ -1,0 +1,59 @@
+<section class="surface-panel p-4">
+  <form class="grid gap-3 md:grid-cols-2 xl:grid-cols-6" method="get">
+    <label class="field-label">Keyword
+      <select class="field-control" name="keyword">
+        <option value="">All keywords</option>
+        {% for configuredKeyword in configuredKeywords %}
+          <option value="{{ configuredKeyword }}" {% if activeFilters.keyword == configuredKeyword %}selected{% endif %}>{{ configuredKeyword }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="field-label">Status
+      <select class="field-control" name="status">
+        <option value="">Any status</option>
+        {% for validJobStatus in validJobStatuses %}
+          <option value="{{ validJobStatus }}" {% if activeFilters.status == validJobStatus %}selected{% endif %}>{{ validJobStatus }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="field-label">Budget
+      <select class="field-control" name="budget_type">
+        <option value="">Any budget</option>
+        <option value="fixed" {% if activeFilters.budget_type == "fixed" %}selected{% endif %}>Fixed</option>
+        <option value="hourly" {% if activeFilters.budget_type == "hourly" %}selected{% endif %}>Hourly</option>
+      </select>
+    </label>
+    <label class="field-label">Country
+      <input class="field-control" name="client_country" value="{{ activeFilters.client_country or '' }}" placeholder="United States">
+    </label>
+    <label class="field-label">Payment
+      <select class="field-control" name="payment_verified">
+        <option value="">Any</option>
+        <option value="true" {% if activeFilters.payment_verified == "true" %}selected{% endif %}>Verified</option>
+        <option value="false" {% if activeFilters.payment_verified == "false" %}selected{% endif %}>Unverified</option>
+      </select>
+    </label>
+    <label class="field-label">Search
+      <input class="field-control" name="text_search" value="{{ activeFilters.text_search or '' }}" placeholder="title or description">
+    </label>
+    <label class="field-label">Min fixed
+      <input class="field-control" name="minimum_fixed_budget" type="number" min="0" value="{{ activeFilters.minimum_fixed_budget or '' }}">
+    </label>
+    <label class="field-label">Min hourly
+      <input class="field-control" name="minimum_hourly_rate" type="number" min="0" value="{{ activeFilters.minimum_hourly_rate or '' }}">
+    </label>
+    <label class="field-label">Max hourly
+      <input class="field-control" name="maximum_hourly_rate" type="number" min="0" value="{{ activeFilters.maximum_hourly_rate or '' }}">
+    </label>
+    <label class="field-label">Scraped after
+      <input class="field-control" name="scraped_after" type="date" value="{{ activeFilters.scraped_after or '' }}">
+    </label>
+    <label class="field-label">Posted after
+      <input class="field-control" name="posted_after" type="date" value="{{ activeFilters.posted_after or '' }}">
+    </label>
+    <div class="flex items-end gap-2">
+      <button class="secondary-button" type="submit">Filter</button>
+      <a class="ghost-button" href="/export.csv?{{ request.query_params }}">Export CSV</a>
+    </div>
+  </form>
+</section>

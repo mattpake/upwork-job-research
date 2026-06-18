@@ -1,0 +1,138 @@
+:root {
+  --color-background: #f4f0e8;
+  --color-primary: #0f766e;
+  --color-primary-container: #ccfbf1;
+  --color-secondary: #7c3aed;
+  --color-surface: #fffdf8;
+  --color-surface-variant: #ece7dd;
+  --color-on-surface: #1f2933;
+  --color-muted: #667085;
+  --color-outline: #d6d0c4;
+  --color-error: #b42318;
+  --color-success: #027a48;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  letter-spacing: 0;
+}
+
+.surface-panel {
+  border: 1px solid var(--color-outline);
+  border-radius: 8px;
+  background: linear-gradient(180deg, var(--color-surface) 0%, #fbf7ef 100%);
+  box-shadow: 0 18px 48px rgba(31, 41, 51, 0.08);
+}
+
+.primary-button,
+.secondary-button,
+.ghost-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 700;
+  transition: transform 150ms ease-out, box-shadow 150ms ease-out, background 150ms ease-out;
+}
+
+.primary-button {
+  background: linear-gradient(135deg, var(--color-primary), #115e59);
+  color: white;
+  box-shadow: 0 14px 28px rgba(15, 118, 110, 0.24);
+}
+
+.secondary-button {
+  background: var(--color-on-surface);
+  color: white;
+}
+
+.ghost-button {
+  border: 1px solid var(--color-outline);
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+}
+
+.primary-button:hover,
+.secondary-button:hover,
+.ghost-button:hover {
+  transform: translateY(-1px);
+}
+
+.button-loader {
+  display: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.42);
+  border-top-color: white;
+  border-radius: 999px;
+  animation: spin 700ms linear infinite;
+}
+
+.is-loading .button-loader {
+  display: inline-block;
+}
+
+.metric-card,
+.error-panel {
+  border: 1px solid var(--color-outline);
+  border-radius: 8px;
+  background: var(--color-surface);
+  padding: 16px;
+}
+
+.metric-card span {
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.metric-card strong {
+  display: block;
+  margin-top: 8px;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 28px;
+}
+
+.error-panel {
+  border-color: rgba(180, 35, 24, 0.32);
+  color: var(--color-error);
+}
+
+.field-label {
+  display: grid;
+  gap: 6px;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.field-control,
+.status-select {
+  min-height: 40px;
+  width: 100%;
+  border: 1px solid var(--color-outline);
+  border-radius: 8px;
+  background: white;
+  padding: 0 10px;
+  color: var(--color-on-surface);
+  outline: none;
+}
+
+.field-control:focus,
+.status-select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

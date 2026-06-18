@@ -3,12 +3,15 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 
 DEFAULT_APIFY_ACTOR_ID = "gio21/upwork-jobs-scraper"
 DEFAULT_RESULTS_PER_KEYWORD = 50
 DEFAULT_KEYWORDS_PATH = Path("config/keywords.json")
 DEFAULT_DATABASE_PATH = Path("database/upwork_jobs.db")
 DEFAULT_REQUEST_TIMEOUT_SECONDS = 120
+DEFAULT_SESSION_SECRET = "local-upwork-research-dashboard-session"
 
 
 @dataclass(frozen=True)
@@ -21,11 +24,13 @@ class ApplicationSettings:
     keywordsPath: Path
     databasePath: Path
     requestTimeoutSeconds: int
+    sessionSecret: str
 
 
 def loadApplicationSettings() -> ApplicationSettings:
     """Load application settings from environment variables."""
 
+    load_dotenv()
     resultsPerKeyword = int(os.getenv("UPWORK_RESEARCH_RESULTS_PER_KEYWORD", str(DEFAULT_RESULTS_PER_KEYWORD)))
     requestTimeoutSeconds = int(
         os.getenv("UPWORK_RESEARCH_REQUEST_TIMEOUT_SECONDS", str(DEFAULT_REQUEST_TIMEOUT_SECONDS))
@@ -38,6 +43,7 @@ def loadApplicationSettings() -> ApplicationSettings:
         keywordsPath=Path(os.getenv("UPWORK_RESEARCH_KEYWORDS_PATH", str(DEFAULT_KEYWORDS_PATH))),
         databasePath=Path(os.getenv("UPWORK_RESEARCH_DATABASE_PATH", str(DEFAULT_DATABASE_PATH))),
         requestTimeoutSeconds=requestTimeoutSeconds,
+        sessionSecret=os.getenv("UPWORK_RESEARCH_SESSION_SECRET", DEFAULT_SESSION_SECRET),
     )
 
 

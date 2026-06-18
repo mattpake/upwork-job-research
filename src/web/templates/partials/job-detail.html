@@ -1,0 +1,28 @@
+<aside class="surface-panel p-5">
+  {% if selectedJob %}
+    <p class="text-sm font-semibold text-[var(--color-secondary)]">Selected job</p>
+    <h2 class="mt-1 font-display text-2xl font-bold">{{ selectedJob.title }}</h2>
+    <a class="mt-3 inline-flex text-sm font-semibold text-[var(--color-primary)]" href="{{ selectedJob.jobUrl }}" target="_blank" rel="noreferrer">Open on Upwork</a>
+    <div class="detail-grid">
+      <span>Budget</span><strong>{{ selectedJob.budgetType or "Unknown" }}</strong>
+      <span>Client</span><strong>{{ selectedJob.clientCountry or "Unknown" }}</strong>
+      <span>Spent</span><strong>{{ selectedJob.clientSpent or "Unknown" }}</strong>
+      <span>Proposals</span><strong>{{ selectedJob.proposalsCount or "Unknown" }}</strong>
+      <span>Skills</span><strong>{{ selectedJob.skills | join(", ") or "Unknown" }}</strong>
+    </div>
+    <div class="mt-5">
+      <h3 class="font-semibold">Description</h3>
+      <p class="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--color-muted)]">{{ selectedJob.description or "No description captured." }}</p>
+    </div>
+    <details class="mt-5">
+      <summary class="cursor-pointer text-sm font-semibold text-[var(--color-primary)]">Raw JSON preview</summary>
+      <pre class="raw-json">{{ selectedJob.rawJson }}</pre>
+    </details>
+  {% else %}
+    <div class="empty-state min-h-[420px]">
+      <div class="empty-mark">--</div>
+      <h3>No selected job</h3>
+      <p>Collected jobs will appear here with full description, client metadata, skills, status, and raw scraper payload.</p>
+    </div>
+  {% endif %}
+</aside>

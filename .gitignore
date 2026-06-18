@@ -3,10 +3,13 @@ __pycache__/
 *.py[oc]
 build/
 dist/
-PRD.MD
+# PRD.MD
 wheels/
 *.egg-info
-api_docs.md
+#DONE.MD
+# api_docs.md
 # Virtual environments
 .venv
 .env
+database/*.db
+uvicorn-smoke.*.log

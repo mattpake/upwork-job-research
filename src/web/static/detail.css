@@ -1,0 +1,54 @@
+.detail-grid {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 12px;
+  margin-top: 24px;
+  font-size: 14px;
+}
+
+.detail-grid span {
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+.raw-json {
+  max-height: 260px;
+  overflow: auto;
+  border-radius: 8px;
+  background: #171717;
+  color: #e5e7eb;
+  padding: 12px;
+  font-size: 12px;
+}
+
+.empty-state {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.empty-mark {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-primary-container);
+  color: var(--color-primary);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.empty-state h3 {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.empty-state p {
+  max-width: 380px;
+  color: var(--color-muted);
+  font-size: 14px;
+}

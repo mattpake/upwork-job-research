@@ -1,0 +1,50 @@
+<div class="surface-panel overflow-hidden">
+  <div class="section-heading">
+    <div>
+      <p class="text-sm font-semibold text-[var(--color-secondary)]">{{ storedJobs | length }} jobs</p>
+      <h2 class="font-display text-xl font-bold">Research queue</h2>
+    </div>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="research-table">
+      <thead>
+        <tr>
+          <th>Job</th><th>Keywords</th><th>Budget</th><th>Client</th><th>Posted</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for storedJob in storedJobs %}
+          <tr data-job-row data-job-id="{{ storedJob.id }}">
+            <td>
+              <a class="job-link" href="{{ storedJob.jobUrl or '#' }}" target="_blank" rel="noreferrer">{{ storedJob.title }}</a>
+              <p class="line-clamp-2 text-xs text-[var(--color-muted)]">{{ storedJob.description or "No description captured" }}</p>
+            </td>
+            <td>{{ storedJob.matchedKeywords | join(", ") }}</td>
+            <td>{{ storedJob.budgetType or "Unknown" }}{% if storedJob.fixedBudget %} / ${{ "%.0f"|format(storedJob.fixedBudget) }}{% endif %}{% if storedJob.hourlyMin %} / ${{ "%.0f"|format(storedJob.hourlyMin) }}-${{ "%.0f"|format(storedJob.hourlyMax or storedJob.hourlyMin) }}/hr{% endif %}</td>
+            <td>{{ storedJob.clientCountry or "Unknown" }} / {{ "Verified" if storedJob.paymentVerified else "Unverified" }}</td>
+            <td>{{ storedJob.postedAt or "Unknown" }}</td>
+            <td>
+              <form action="/jobs/{{ storedJob.id }}/status" method="post">
+                <select class="status-select" name="status" onchange="this.form.submit()">
+                  {% for validJobStatus in validJobStatuses %}
+                    <option value="{{ validJobStatus }}" {% if storedJob.status == validJobStatus %}selected{% endif %}>{{ validJobStatus }}</option>
+                  {% endfor %}
+                </select>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="6">
+              <div class="empty-state">
+                <div class="empty-mark">UP</div>
+                <h3>No jobs collected yet</h3>
+                <p>Run the first scan after adding your Apify token to collect live Upwork market data.</p>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
