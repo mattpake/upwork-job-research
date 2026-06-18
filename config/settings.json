@@ -1,0 +1,10 @@
+{
+  "apify_actor_id": "gio21/upwork-jobs-scraper",
+  "results_per_keyword": 50,
+  "request_timeout_seconds": 120,
+  "keywords_path": "config/keywords.json",
+  "database_path": "database/upwork_jobs.db",
+  "session_secret": "local-upwork-research-dashboard-session",
+  "dashboard_host": "127.0.0.1",
+  "dashboard_port": 8000
+}

@@ -70,8 +70,26 @@ http://127.0.0.1:8000
 
 ## Environment Setup
 
+Non-secret app defaults live in `config/settings.json`:
+
+```json
+{
+  "apify_actor_id": "gio21/upwork-jobs-scraper",
+  "results_per_keyword": 50,
+  "request_timeout_seconds": 120,
+  "keywords_path": "config/keywords.json",
+  "database_path": "database/upwork_jobs.db",
+  "session_secret": "local-upwork-research-dashboard-session",
+  "dashboard_host": "127.0.0.1",
+  "dashboard_port": 8000
+}
+```
+
+Use `.env` for secrets and machine-specific overrides:
+
 ```dotenv
 APIFY_API_TOKEN=your-apify-token
+UPWORK_RESEARCH_SETTINGS_PATH=config/settings.json
 UPWORK_RESEARCH_APIFY_ACTOR_ID=gio21/upwork-jobs-scraper
 UPWORK_RESEARCH_RESULTS_PER_KEYWORD=50
 UPWORK_RESEARCH_REQUEST_TIMEOUT_SECONDS=120
@@ -85,20 +103,23 @@ UPWORK_RESEARCH_DASHBOARD_PORT=8000
 | Variable | Description |
 | --- | --- |
 | `APIFY_API_TOKEN` | Required for live Upwork scans. |
-| `UPWORK_RESEARCH_APIFY_ACTOR_ID` | Apify actor id. Default is `gio21/upwork-jobs-scraper`. |
-| `UPWORK_RESEARCH_RESULTS_PER_KEYWORD` | Maximum jobs requested per keyword. |
-| `UPWORK_RESEARCH_REQUEST_TIMEOUT_SECONDS` | HTTP timeout for one actor run. |
-| `UPWORK_RESEARCH_KEYWORDS_PATH` | JSON file containing the keyword list. |
-| `UPWORK_RESEARCH_DATABASE_PATH` | Local SQLite database path. |
-| `UPWORK_RESEARCH_SESSION_SECRET` | Local session signing secret for scan summary messages. |
-| `UPWORK_RESEARCH_DASHBOARD_HOST` | Local server host used by `uv run .\main.py`. |
-| `UPWORK_RESEARCH_DASHBOARD_PORT` | Local server port used by `uv run .\main.py`. |
+| `UPWORK_RESEARCH_SETTINGS_PATH` | Optional path to the JSON settings file. |
+| `UPWORK_RESEARCH_APIFY_ACTOR_ID` | Optional override for `apify_actor_id`. |
+| `UPWORK_RESEARCH_RESULTS_PER_KEYWORD` | Optional override for `results_per_keyword`. |
+| `UPWORK_RESEARCH_REQUEST_TIMEOUT_SECONDS` | Optional override for `request_timeout_seconds`. |
+| `UPWORK_RESEARCH_KEYWORDS_PATH` | Optional override for `keywords_path`. |
+| `UPWORK_RESEARCH_DATABASE_PATH` | Optional override for `database_path`. |
+| `UPWORK_RESEARCH_SESSION_SECRET` | Optional override for `session_secret`. |
+| `UPWORK_RESEARCH_DASHBOARD_HOST` | Optional override for `dashboard_host`. |
+| `UPWORK_RESEARCH_DASHBOARD_PORT` | Optional override for `dashboard_port`. |
 
 ## Project Structure
 
 ```text
 upwork-job-research/
 +-- config/                         # Editable keyword configuration
+|   +-- keywords.json               # Search keywords
+|   +-- settings.json               # Non-secret app settings
 +-- database/                       # Local SQLite database is created here
 +-- docs/                           # Implementation and scraper notes
 +-- src/
