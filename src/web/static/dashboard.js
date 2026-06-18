@@ -1,4 +1,14 @@
 const loadingForms = document.querySelectorAll("[data-loading-form]");
+const scanOverlay = document.querySelector("[data-scan-overlay]");
+const scanPhase = document.querySelector("[data-scan-phase]");
+const scanPhases = [
+  "Preparing configured keywords",
+  "Running concurrent Apify actor jobs",
+  "Normalizing Upwork job payloads",
+  "Merging duplicate market signals",
+  "Saving fresh research to SQLite"
+];
+let scanPhaseTimerId = null;
 
 loadingForms.forEach((loadingForm) => {
   loadingForm.addEventListener("submit", () => {
@@ -10,5 +20,22 @@ loadingForms.forEach((loadingForm) => {
     submitButton.classList.add("is-loading");
     submitButton.setAttribute("disabled", "disabled");
     buttonLabel.textContent = "Scanning Upwork";
+    showScanOverlay();
   });
 });
+
+function showScanOverlay() {
+  if (!scanOverlay || !scanPhase) {
+    return;
+  }
+
+  let activePhaseIndex = 0;
+  scanOverlay.classList.add("is-visible");
+  scanOverlay.setAttribute("aria-hidden", "false");
+  scanPhase.textContent = scanPhases[activePhaseIndex];
+  window.clearInterval(scanPhaseTimerId);
+  scanPhaseTimerId = window.setInterval(() => {
+    activePhaseIndex = (activePhaseIndex + 1) % scanPhases.length;
+    scanPhase.textContent = scanPhases[activePhaseIndex];
+  }, 1800);
+}

@@ -11,23 +11,25 @@
     <script>
       tailwind.config = { theme: { extend: { fontFamily: { sans: ["Inter", "sans-serif"], display: ["Plus Jakarta Sans", "sans-serif"] } } } }
     </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/scan-overlay.css">
     <link rel="stylesheet" href="/static/table.css">
     <link rel="stylesheet" href="/static/detail.css">
   </head>
   <body class="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
-    <main class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-4 py-5 sm:px-6 lg:px-8">
-      <header class="surface-panel grid gap-4 p-5 lg:grid-cols-[1fr_auto] lg:items-center">
+    <main class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
+      <header class="dashboard-header grid gap-4 p-5 lg:grid-cols-[1fr_auto] lg:items-center">
         <div>
-          <p class="text-sm font-semibold text-[var(--color-secondary)]">Market intelligence dashboard</p>
+          <div class="brand-chip"><i class="fa-solid fa-chart-line"></i><span>Market research console</span></div>
           <h1 class="font-display text-3xl font-bold tracking-normal text-[var(--color-on-surface)]">Upwork Job Research</h1>
           <p class="mt-2 max-w-3xl text-sm leading-6 text-[var(--color-muted)]">
-            Collect broad Upwork demand data by keyword, deduplicate repeated jobs, inspect client metadata, and export clean CSV research.
+            Scan configured keywords, collect raw Upwork market data, merge duplicates, and export clean CSV research.
           </p>
         </div>
         <form action="/scan" method="post" data-loading-form>
           <button class="primary-button" type="submit">
-            <span class="button-loader" aria-hidden="true"></span>
+            <i class="fa-brands fa-upwork" aria-hidden="true"></i>
             <span data-button-label>Run Upwork Scan</span>
           </button>
         </form>
@@ -54,6 +56,29 @@
         {% include "partials/job-detail.html" %}
       </section>
     </main>
+    <div class="scan-overlay" data-scan-overlay aria-hidden="true">
+      <section class="scan-dialog" role="status" aria-live="polite">
+        <div class="scan-dialog-header">
+          <div class="scan-icon"><i class="fa-brands fa-upwork"></i></div>
+          <div>
+            <p>Running Upwork scan</p>
+            <h2 data-scan-phase>Preparing configured keywords</h2>
+          </div>
+        </div>
+        <div class="scan-progress-track"><span data-scan-progress></span></div>
+        <div class="scan-steps">
+          <span><i class="fa-solid fa-magnifying-glass"></i> Keywords</span>
+          <span><i class="fa-solid fa-cloud-arrow-down"></i> Apify</span>
+          <span><i class="fa-solid fa-database"></i> SQLite</span>
+          <span><i class="fa-solid fa-filter-circle-xmark"></i> Deduping</span>
+        </div>
+        <div class="skeleton-table" aria-hidden="true">
+          <div></div><div></div><div></div>
+          <div></div><div></div><div></div>
+          <div></div><div></div><div></div>
+        </div>
+      </section>
+    </div>
     <script src="/static/dashboard.js"></script>
   </body>
 </html>

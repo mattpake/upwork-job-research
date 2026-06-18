@@ -52,7 +52,7 @@ def test_load_application_settings_requires_apify_token_for_live_scans(monkeypat
     loadedSettings = loadApplicationSettings()
 
     assert loadedSettings.apifyApiToken == ""
-    assert loadedSettings.apifyActorId == "gio21/upwork-jobs-scraper"
+    assert loadedSettings.apifyActorId == "neatrat/upwork-job-scraper"
     assert loadedSettings.resultsPerKeyword == 50
     assert loadedSettings.dashboardHost == "127.0.0.1"
     assert loadedSettings.dashboardPort == 8000
@@ -72,6 +72,7 @@ def test_load_file_backed_application_settings_uses_settings_json_values(tmp_pat
                 "session_secret": "local-secret",
                 "dashboard_host": "127.0.0.1",
                 "dashboard_port": 8765,
+                "scan_concurrency_limit": 6,
             }
         ),
         encoding="utf-8",
@@ -88,6 +89,7 @@ def test_load_file_backed_application_settings_uses_settings_json_values(tmp_pat
     assert loadedSettings.sessionSecret == "local-secret"
     assert loadedSettings.dashboardHost == "127.0.0.1"
     assert loadedSettings.dashboardPort == 8765
+    assert loadedSettings.scanConcurrencyLimit == 6
 
 
 def test_environment_variables_override_settings_json_values(tmp_path, monkeypatch):

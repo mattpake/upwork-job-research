@@ -74,7 +74,7 @@ Non-secret app defaults live in `config/settings.json`:
 
 ```json
 {
-  "apify_actor_id": "gio21/upwork-jobs-scraper",
+  "apify_actor_id": "neatrat/upwork-job-scraper",
   "results_per_keyword": 50,
   "request_timeout_seconds": 120,
   "keywords_path": "config/keywords.json",
@@ -90,7 +90,7 @@ Use `.env` for secrets and machine-specific overrides:
 ```dotenv
 APIFY_API_TOKEN=your-apify-token
 UPWORK_RESEARCH_SETTINGS_PATH=config/settings.json
-UPWORK_RESEARCH_APIFY_ACTOR_ID=gio21/upwork-jobs-scraper
+UPWORK_RESEARCH_APIFY_ACTOR_ID=neatrat/upwork-job-scraper
 UPWORK_RESEARCH_RESULTS_PER_KEYWORD=50
 UPWORK_RESEARCH_REQUEST_TIMEOUT_SECONDS=120
 UPWORK_RESEARCH_KEYWORDS_PATH=config/keywords.json
@@ -112,6 +112,7 @@ UPWORK_RESEARCH_DASHBOARD_PORT=8000
 | `UPWORK_RESEARCH_SESSION_SECRET` | Optional override for `session_secret`. |
 | `UPWORK_RESEARCH_DASHBOARD_HOST` | Optional override for `dashboard_host`. |
 | `UPWORK_RESEARCH_DASHBOARD_PORT` | Optional override for `dashboard_port`. |
+| `UPWORK_RESEARCH_SCAN_CONCURRENCY_LIMIT` | Optional override for concurrent keyword scans. |
 
 ## Project Structure
 
@@ -183,6 +184,8 @@ Then open `http://127.0.0.1:8000` in the browser.
 ## Apify Actor Choice
 
 See [docs/apify-actor-comparison.md](docs/apify-actor-comparison.md) for the actor comparison and rationale.
+
+The default actor is `neatrat/upwork-job-scraper` because `api_docs.md` contains that actor's endpoint and input schema.
 
 ## Testing
 

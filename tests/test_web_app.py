@@ -14,6 +14,9 @@ def test_dashboard_home_renders_run_scan_action(tmp_path, monkeypatch):
     assert response.status_code == 200
     assert "Run Upwork Scan" in response.text
     assert "AI automation" in response.text
+    assert "font-awesome" in response.text
+    assert "data-scan-overlay" in response.text
+    assert "Running Upwork scan" in response.text
 
 
 def test_status_endpoint_updates_existing_job_status(tmp_path, monkeypatch):

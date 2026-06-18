@@ -6,7 +6,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 
-DEFAULT_APIFY_ACTOR_ID = "gio21/upwork-jobs-scraper"
+DEFAULT_APIFY_ACTOR_ID = "neatrat/upwork-job-scraper"
 DEFAULT_RESULTS_PER_KEYWORD = 50
 DEFAULT_KEYWORDS_PATH = Path("config/keywords.json")
 DEFAULT_SETTINGS_PATH = Path("config/settings.json")
@@ -15,6 +15,7 @@ DEFAULT_REQUEST_TIMEOUT_SECONDS = 120
 DEFAULT_SESSION_SECRET = "local-upwork-research-dashboard-session"
 DEFAULT_DASHBOARD_HOST = "127.0.0.1"
 DEFAULT_DASHBOARD_PORT = 8000
+DEFAULT_SCAN_CONCURRENCY_LIMIT = 4
 
 
 @dataclass(frozen=True)
@@ -30,6 +31,7 @@ class ApplicationSettings:
     sessionSecret: str
     dashboardHost: str
     dashboardPort: int
+    scanConcurrencyLimit: int
 
 
 def loadApplicationSettings() -> ApplicationSettings:
@@ -62,6 +64,12 @@ def loadFileBackedApplicationSettings(settingsConfigPath: Path) -> ApplicationSe
             str(fileSettings.get("dashboard_port", DEFAULT_DASHBOARD_PORT)),
         )
     )
+    scanConcurrencyLimit = int(
+        os.getenv(
+            "UPWORK_RESEARCH_SCAN_CONCURRENCY_LIMIT",
+            str(fileSettings.get("scan_concurrency_limit", DEFAULT_SCAN_CONCURRENCY_LIMIT)),
+        )
+    )
 
     return ApplicationSettings(
         apifyApiToken=os.getenv("APIFY_API_TOKEN", ""),
@@ -86,6 +94,7 @@ def loadFileBackedApplicationSettings(settingsConfigPath: Path) -> ApplicationSe
             str(fileSettings.get("dashboard_host", DEFAULT_DASHBOARD_HOST)),
         ),
         dashboardPort=dashboardPort,
+        scanConcurrencyLimit=max(1, scanConcurrencyLimit),
     )
 
 

@@ -2,7 +2,7 @@
   {% if selectedJob %}
     <p class="text-sm font-semibold text-[var(--color-secondary)]">Selected job</p>
     <h2 class="mt-1 font-display text-2xl font-bold">{{ selectedJob.title }}</h2>
-    <a class="mt-3 inline-flex text-sm font-semibold text-[var(--color-primary)]" href="{{ selectedJob.jobUrl }}" target="_blank" rel="noreferrer">Open on Upwork</a>
+    <a class="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-primary)]" href="{{ selectedJob.jobUrl }}" target="_blank" rel="noreferrer"><i class="fa-solid fa-arrow-up-right-from-square"></i>Open on Upwork</a>
     <div class="detail-grid">
       <span>Budget</span><strong>{{ selectedJob.budgetType or "Unknown" }}</strong>
       <span>Client</span><strong>{{ selectedJob.clientCountry or "Unknown" }}</strong>
@@ -20,7 +20,7 @@
     </details>
   {% else %}
     <div class="empty-state min-h-[420px]">
-      <div class="empty-mark">--</div>
+      <div class="empty-mark"><i class="fa-solid fa-briefcase"></i></div>
       <h3>No selected job</h3>
       <p>Collected jobs will appear here with full description, client metadata, skills, status, and raw scraper payload.</p>
     </div>

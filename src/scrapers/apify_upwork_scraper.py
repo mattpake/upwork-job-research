@@ -56,6 +56,13 @@ class ApifyUpworkScraper:
                 "includeKeywords.matchDescription": True,
             }
         if self.actorId == "neatrat/upwork-job-scraper":
-            return {"query": keyword, "maxItems": maxJobs}
+            return {
+                "query": keyword,
+                "rawUrl": None,
+                "page": 1,
+                "pagesToScrape": 1,
+                "perPage": maxJobs,
+                "sort": "newest",
+            }
 
         return {"query": keyword, "max_jobs": maxJobs}

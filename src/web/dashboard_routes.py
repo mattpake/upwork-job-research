@@ -77,6 +77,7 @@ async def runUpworkScan(request: Request) -> RedirectResponse:
         apifyUpworkScraper,
         jobRepository,
         applicationSettings.resultsPerKeyword,
+        applicationSettings.scanConcurrencyLimit,
     )
     scanSummary = await scanOrchestrator.runKeywordScan(configuredKeywords)
     if hasattr(request, "session"):

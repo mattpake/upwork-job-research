@@ -1,3 +1,5 @@
+import asyncio
+
 from src.models.job_models import NormalizedUpworkJob, ScanRunSummary
 from src.repositories.job_repository import JobRepository
 from src.scrapers.apify_upwork_scraper import ApifyUpworkScraper
@@ -12,27 +14,38 @@ class UpworkScanOrchestrator:
         apifyUpworkScraper: ApifyUpworkScraper,
         jobRepository: JobRepository,
         resultsPerKeyword: int,
+        scanConcurrencyLimit: int = 4,
     ) -> None:
         self.apifyUpworkScraper = apifyUpworkScraper
         self.jobRepository = jobRepository
         self.resultsPerKeyword = resultsPerKeyword
+        self.scanConcurrencyLimit = scanConcurrencyLimit
 
     async def runKeywordScan(self, configuredKeywords: list[str]) -> ScanRunSummary:
         """Run the configured scraper for all keywords and store normalized jobs."""
 
         normalizedJobs: list[NormalizedUpworkJob] = []
         scanErrors: list[str] = []
-        for configuredKeyword in configuredKeywords:
-            try:
+        keywordSemaphore = asyncio.Semaphore(self.scanConcurrencyLimit)
+
+        async def fetchAndNormalizeKeyword(configuredKeyword: str) -> list[NormalizedUpworkJob]:
+            async with keywordSemaphore:
                 rawJobPayloads = await self.apifyUpworkScraper.fetchJobsForKeyword(
                     configuredKeyword,
                     self.resultsPerKeyword,
                 )
-                normalizedJobs.extend(
-                    normalizeRawUpworkJob(rawJobPayload, configuredKeyword) for rawJobPayload in rawJobPayloads
-                )
-            except Exception as scanError:
-                scanErrors.append(f"{configuredKeyword}: {scanError}")
+                return [normalizeRawUpworkJob(rawJobPayload, configuredKeyword) for rawJobPayload in rawJobPayloads]
+
+        keywordScanResults = await asyncio.gather(
+            *(fetchAndNormalizeKeyword(configuredKeyword) for configuredKeyword in configuredKeywords),
+            return_exceptions=True,
+        )
+
+        for configuredKeyword, keywordScanResult in zip(configuredKeywords, keywordScanResults, strict=True):
+            if isinstance(keywordScanResult, Exception):
+                scanErrors.append(f"{configuredKeyword}: {keywordScanResult}")
+                continue
+            normalizedJobs.extend(keywordScanResult)
 
         upsertSummary = self.jobRepository.upsertNormalizedJobs(normalizedJobs)
         return ScanRunSummary(
