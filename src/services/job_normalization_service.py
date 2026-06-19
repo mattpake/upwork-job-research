@@ -31,6 +31,10 @@ def normalizeRawUpworkJob(rawJobPayload: dict[str, Any], searchKeyword: str) -> 
     budgetType = _resolveBudgetType(contractType, fixedBudget, hourlyMin, hourlyMax)
     rawClientPayload = rawJobPayload.get("client") if isinstance(rawJobPayload.get("client"), dict) else {}
 
+    # helper shortcuts for nested client/vendor values
+    raw_client_stats = rawClientPayload.get("stats") if isinstance(rawClientPayload.get("stats"), dict) else {}
+    raw_vendor_payload = rawJobPayload.get("vendor") if isinstance(rawJobPayload.get("vendor"), dict) else {}
+
     return NormalizedUpworkJob(
         externalJobId=externalJobId,
         jobUrl=jobUrl,
@@ -43,19 +47,25 @@ def normalizeRawUpworkJob(rawJobPayload: dict[str, Any], searchKeyword: str) -> 
         fixedBudget=fixedBudget,
         hourlyMin=hourlyMin,
         hourlyMax=hourlyMax,
-        clientCountry=_firstString(rawJobPayload, ["clientCountry", "client_country"]) or rawClientPayload.get("country"),
-        clientSpent=_firstString(rawJobPayload, ["clientTotalSpent", "client_spent"]) or rawClientPayload.get("totalSpent"),
-        clientRating=_firstNumber(rawJobPayload, ["clientRating", "client_rating"]),
-        paymentVerified=_firstBoolean(rawJobPayload, ["clientVerified", "payment_verified"]),
+        # Resolve client country from multiple possible sources (full name or country code)
+        clientCountry=_resolve_country_name(
+            _firstString(rawJobPayload, ["clientCountry", "client_country"]) or rawClientPayload.get("country") or rawClientPayload.get("countryCode") or rawClientPayload.get("country_code")
+        ),
+        # client spent may come from top-level, client.totalSpent, or client.stats.totalSpent
+        clientSpent=_firstString(rawJobPayload, ["clientTotalSpent", "client_spent"]) or rawClientPayload.get("totalSpent") or raw_client_stats.get("totalSpent") or raw_client_stats.get("total_spent"),
+        clientRating=_firstNumber(rawJobPayload, ["clientRating", "client_rating"]) or raw_client_stats.get("feedbackRate"),
+        # payment verification sometimes appears under client.paymentMethodVerified
+        paymentVerified=_firstBoolean(rawJobPayload, ["clientVerified", "payment_verified"]) or _firstBoolean(rawClientPayload, ["paymentMethodVerified", "payment_method_verified"]),
         proposalsCount=_firstString(rawJobPayload, ["proposals", "proposals_count", "applicants"]),
         postedAt=_firstString(rawJobPayload, ["postedOn", "posted_at", "ts_publish", "publishedAt"]),
         rawJson=rawJobPayload,
-        clientHires=_firstString(rawJobPayload, ["clientHires", "client_hires"]),
-        clientJobsPosted=_firstString(rawJobPayload, ["clientJobsPosted", "client_jobs_posted"]),
+        clientHires=_firstString(rawJobPayload, ["clientHires", "client_hires"]) or raw_client_stats.get("totalHires") or raw_client_stats.get("total_hires"),
+        clientJobsPosted=_firstString(rawJobPayload, ["clientJobsPosted", "client_jobs_posted"]) or raw_client_stats.get("jobsPosted") or raw_client_stats.get("jobs_posted"),
         clientAvgHourlyRatePaid=_firstString(rawJobPayload, ["clientAvgHourlyRatePaid"]),
         clientTotalReviews=_firstString(rawJobPayload, ["clientTotalReviews"]),
         jobDuration=_firstString(rawJobPayload, ["duration", "job_duration", "estimated_time"]),
-        experienceLevel=_firstString(rawJobPayload, ["experienceLevel", "level", "experience_level"]),
+        # experience may be top-level or under vendor.experienceLevel
+        experienceLevel=_firstString(rawJobPayload, ["experienceLevel", "level", "experience_level"]) or _firstString(raw_vendor_payload, ["experienceLevel", "experience_level"]),
         connectsRequired=_firstString(rawJobPayload, ["connectsRequired", "connects_required"]),
         category=_firstString(rawJobPayload, ["category", "category_name"]),
         subcategory=_firstString(rawJobPayload, ["subcategory", "subcategory_name"]),
@@ -68,6 +78,42 @@ def _firstString(rawPayload: dict[str, Any], candidateKeys: list[str]) -> str | 
         if rawValue is not None and str(rawValue).strip():
             return str(rawValue).strip()
     return None
+
+
+def _resolve_country_name(raw_country: Any) -> str | None:
+    """Return a human-friendly country name.
+
+    Accepts full names or ISO country codes. If a two-letter code is provided,
+    map it to a common country name. Otherwise return the string value or None.
+    """
+    if raw_country is None:
+        return None
+    country_text = str(raw_country).strip()
+    if not country_text:
+        return None
+    # If already a full name (contains space or longer than 3 chars), return as-is
+    if len(country_text) > 3 or " " in country_text:
+        return country_text
+    code = country_text.upper()
+    mapping = {
+        "US": "United States",
+        "CA": "Canada",
+        "GB": "United Kingdom",
+        "UK": "United Kingdom",
+        "AU": "Australia",
+        "IN": "India",
+        "DE": "Germany",
+        "FR": "France",
+        "NL": "Netherlands",
+        "ES": "Spain",
+        "IT": "Italy",
+        "BR": "Brazil",
+        "MX": "Mexico",
+        "PH": "Philippines",
+        "PK": "Pakistan",
+        "NG": "Nigeria",
+    }
+    return mapping.get(code, country_text)
 
 
 def _firstNumber(rawPayload: dict[str, Any], candidateKeys: list[str]) -> float | None:

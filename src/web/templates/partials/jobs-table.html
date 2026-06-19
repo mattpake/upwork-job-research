@@ -1,28 +1,47 @@
 <div class="surface-panel overflow-hidden">
+  <!-- Table Header -->
   <div class="section-heading">
     <div>
-      <h2 class="font-display text-lg font-bold">Research queue</h2>
-      <p>{{ storedJobs | length }} jobs collected</p>
+      <h2>Research Queue</h2>
+      <p id="table-count-label">{{ storedJobs | length }} jobs collected</p>
     </div>
   </div>
+
+  <!-- Table -->
   <div class="overflow-x-auto">
     <table class="research-table">
       <thead>
         <tr>
-          <th>Job</th><th>Keywords</th><th>Budget</th><th>Client</th><th>Posted</th><th>Status</th>
+          <th>Job Title</th>
+          <th>Keywords</th>
+          <th>Budget</th>
+          <th>Client</th>
+          <th>Posted</th>
+          <th>Status</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="jobs-tbody">
         {% for storedJob in storedJobs %}
-          <tr data-job-row data-job-json="{{ storedJob.model_dump_json() | escape }}" class="cursor-pointer hover:bg-[var(--color-surface-hover)]">
+          <tr data-job-row data-job-json="{{ storedJob.model_dump_json() | escape }}">
             <td>
-              <a class="job-link" href="{{ storedJob.jobUrl or '#' }}" target="_blank" rel="noreferrer">{{ storedJob.title }}</a>
-              <p class="line-clamp-2 text-xs text-[var(--color-muted)]">{{ storedJob.description or "No description captured" }}</p>
+              <span class="job-title">{{ storedJob.title }}</span>
+              <span class="job-excerpt">{{ storedJob.description or "No description captured" }}</span>
             </td>
-            <td>{{ storedJob.matchedKeywords | join(", ") }}</td>
-            <td>{{ storedJob.budgetType or "Unknown" }}{% if storedJob.fixedBudget %} / ${{ "%.0f"|format(storedJob.fixedBudget) }}{% endif %}{% if storedJob.hourlyMin %} / ${{ "%.0f"|format(storedJob.hourlyMin) }}-${{ "%.0f"|format(storedJob.hourlyMax or storedJob.hourlyMin) }}/hr{% endif %}</td>
-            <td>{{ storedJob.clientCountry or "Unknown" }} / {{ "Verified" if storedJob.paymentVerified else "Unverified" }}</td>
-            <td>{{ storedJob.postedAt or "Unknown" }}</td>
+            <td style="font-size:12px;color:var(--color-muted)">{{ storedJob.matchedKeywords | join(", ") }}</td>
+            <td style="font-size:12px">
+              {% if storedJob.budgetType %}
+                <span style="font-weight:600">{{ storedJob.budgetType | capitalize }}</span>
+                {% if storedJob.fixedBudget %}<br><span style="color:var(--color-muted)">${{ "%.0f"|format(storedJob.fixedBudget) }}</span>{% endif %}
+                {% if storedJob.hourlyMin %}<br><span style="color:var(--color-muted)">${{ "%.0f"|format(storedJob.hourlyMin) }}–${{ "%.0f"|format(storedJob.hourlyMax or storedJob.hourlyMin) }}/hr</span>{% endif %}
+              {% else %}
+                <span style="color:var(--color-muted-light)">—</span>
+              {% endif %}
+            </td>
+            <td style="font-size:12px">
+              {{ storedJob.clientCountry or "—" }}<br>
+              <span style="color:var(--color-muted)">{{ "✓ Verified" if storedJob.paymentVerified else "Unverified" }}</span>
+            </td>
+            <td style="font-size:12px;color:var(--color-muted)">{{ storedJob.postedAt or "—" }}</td>
             <td>
               <form action="/jobs/{{ storedJob.id }}/status" method="post">
                 <select class="status-select" name="status" onchange="this.form.submit()">
@@ -38,12 +57,29 @@
             <td colspan="6">
               <div class="empty-state">
                 <h3>No jobs collected yet</h3>
-                <p>Run a scan to collect live Upwork market data. Scan progress and errors will appear above the filters.</p>
+                <p>Run a scan to collect live Upwork market data. Results appear here after the scan completes.</p>
               </div>
             </td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
+  </div>
+
+  <!-- Pagination -->
+  <div id="pagination-controls" class="pagination-bar hidden">
+    <p class="pagination-info">
+      Showing <strong id="page-info-start">1</strong>–<strong id="page-info-end">20</strong>
+      of <strong id="page-info-total">0</strong> jobs
+    </p>
+    <div class="pagination-buttons">
+      <button id="btn-prev-page" class="page-btn" disabled>
+        <i class="fa-solid fa-chevron-left" style="font-size:11px"></i>
+      </button>
+      <span id="page-number-display" style="font-size:13px;font-weight:600;color:var(--color-on-surface);padding:0 4px"></span>
+      <button id="btn-next-page" class="page-btn">
+        <i class="fa-solid fa-chevron-right" style="font-size:11px"></i>
+      </button>
+    </div>
   </div>
 </div>

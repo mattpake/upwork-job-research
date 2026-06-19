@@ -1,42 +1,188 @@
-.detail-grid {
-  display: grid;
-  grid-template-columns: 96px 1fr;
-  gap: 12px;
-  margin-top: 24px;
-  font-size: 14px;
+/* ---- Job detail sidebar ---- */
+.detail-header {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-outline);
+  margin-bottom: 16px;
 }
 
-.detail-grid span {
+.detail-label {
+  font-size: 11px;
+  font-weight: 700;
   color: var(--color-muted);
-  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 6px;
 }
 
-.raw-json {
-  max-height: 260px;
-  overflow: auto;
-  border-radius: 8px;
-  background: #171717;
-  color: #e5e7eb;
-  padding: 12px;
+.detail-title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--color-on-surface);
+  margin-bottom: 10px;
+}
+
+.detail-open-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: opacity 120ms ease;
+}
+
+.detail-open-link:hover {
+  text-decoration: underline;
+}
+
+/* ---- Metadata rows ---- */
+.detail-meta {
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--color-outline);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.detail-meta-row {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  align-items: center;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--color-outline);
+  font-size: 13px;
+}
+
+.detail-meta-row:last-child {
+  border-bottom: none;
+}
+
+.detail-meta-row:nth-child(even) {
+  background: var(--color-surface-variant);
+}
+
+.meta-key {
+  font-weight: 600;
+  color: var(--color-muted);
   font-size: 12px;
 }
 
-.empty-state {
-  display: grid;
-  place-items: center;
+.meta-val {
+  font-weight: 500;
+  color: var(--color-on-surface);
+  word-break: break-word;
+}
+
+/* ---- Description ---- */
+.detail-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+  margin-bottom: 8px;
+}
+
+.detail-description {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--color-muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+  /* let the outer sidebar `aside` handle scrolling to avoid nested scrollbars */
+  max-height: none;
+  overflow: visible;
+}
+
+/* ---- Skills chips ---- */
+.skills-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.skill-chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--color-surface-variant);
+  border: 1px solid var(--color-outline);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-on-surface);
+}
+
+/* ---- Raw JSON ---- */
+.raw-json-toggle summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary);
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.raw-json-toggle summary::-webkit-details-marker { display: none; }
+
+.raw-json {
+  margin-top: 10px;
+  /* Keep JSON inside the panel on small screens: wrap long lines and allow horizontal scroll if needed */
+  max-width: 100%;
+  box-sizing: border-box;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  overflow-x: auto;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-variant);
+  border: 1px solid var(--color-outline);
+  padding: 12px;
+  font-size: 11.5px;
+  color: var(--color-on-surface);
+  line-height: 1.6;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+/* ---- Empty state (sidebar) ---- */
+.detail-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 10px;
-  padding: 56px 24px;
+  padding: 60px 20px;
   text-align: center;
 }
 
-.empty-state h3 {
-  font-family: "Plus Jakarta Sans", sans-serif;
-  font-size: 18px;
-  font-weight: 700;
+.detail-empty-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--color-surface-variant);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-muted-light);
+  font-size: 20px;
+  margin-bottom: 4px;
 }
 
-.empty-state p {
-  max-width: 380px;
+.detail-empty h3 {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-on-surface);
+}
+
+.detail-empty p {
+  font-size: 13px;
   color: var(--color-muted);
-  font-size: 14px;
+  max-width: 260px;
+  line-height: 1.6;
 }

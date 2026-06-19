@@ -1,26 +1,77 @@
-<aside class="surface-panel p-5" id="job-detail-panel">
+<aside class="surface-panel sticky top-5" id="job-detail-panel">
+
+  <!-- Populated state -->
   <div id="detail-content" class="{{ 'hidden' if not selectedJob else '' }}">
-    <p class="text-sm font-semibold text-[var(--color-secondary)]">Selected job</p>
-    <h2 id="detail-title" class="mt-1 font-display text-2xl font-bold">{{ selectedJob.title if selectedJob else '' }}</h2>
-    <a id="detail-url" class="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-primary)]" href="{{ selectedJob.jobUrl if selectedJob else '#' }}" target="_blank" rel="noreferrer"><i class="fa-solid fa-arrow-up-right-from-square"></i>Open on Upwork</a>
-    <div class="detail-grid">
-      <span>Budget</span><strong id="detail-budget">{{ selectedJob.budgetType if selectedJob else "Unknown" }}</strong>
-      <span>Client</span><strong id="detail-client">{{ selectedJob.clientCountry if selectedJob else "Unknown" }}</strong>
-      <span>Spent</span><strong id="detail-spent">{{ selectedJob.clientSpent if selectedJob else "Unknown" }}</strong>
-      <span>Proposals</span><strong id="detail-proposals">{{ selectedJob.proposalsCount if selectedJob else "Unknown" }}</strong>
-      <span>Skills</span><strong id="detail-skills">{{ selectedJob.skills | join(", ") if selectedJob else "Unknown" }}</strong>
+    <div class="detail-header" style="padding:20px 20px 16px">
+      <p class="detail-label">Selected job</p>
+      <h2 id="detail-title" class="detail-title">{{ selectedJob.title if selectedJob else '' }}</h2>
+      <a id="detail-url" class="detail-open-link" href="{{ selectedJob.jobUrl if selectedJob else '#' }}" target="_blank" rel="noreferrer">
+        <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:11px"></i> Open on Upwork
+      </a>
     </div>
-    <div class="mt-5">
-      <h3 class="font-semibold">Description</h3>
-      <p id="detail-description" class="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--color-muted)]">{{ selectedJob.description if selectedJob else "No description captured." }}</p>
+
+    <div style="padding:0 20px 20px">
+      <!-- Meta rows -->
+      <div class="detail-meta">
+        <div class="detail-meta-row">
+          <span class="meta-key">Budget</span>
+          <span id="detail-budget" class="meta-val">{{ selectedJob.budgetType if selectedJob else "—" }}</span>
+        </div>
+        <div class="detail-meta-row">
+          <span class="meta-key">Country</span>
+          <span id="detail-client" class="meta-val">{{ selectedJob.clientCountry if selectedJob else "—" }}</span>
+        </div>
+        <div class="detail-meta-row">
+          <span class="meta-key">Client spent</span>
+          <span id="detail-spent" class="meta-val">{{ selectedJob.clientSpent if selectedJob else "—" }}</span>
+        </div>
+        <div class="detail-meta-row">
+          <span class="meta-key">Proposals</span>
+          <span id="detail-proposals" class="meta-val">{{ selectedJob.proposalsCount if selectedJob else "—" }}</span>
+        </div>
+        <div class="detail-meta-row">
+          <span class="meta-key">Experience</span>
+          <span id="detail-experience" class="meta-val">{{ selectedJob.experienceLevel if selectedJob else "—" }}</span>
+        </div>
+        <div class="detail-meta-row">
+          <span class="meta-key">Duration</span>
+          <span id="detail-duration" class="meta-val">{{ selectedJob.jobDuration if selectedJob else "—" }}</span>
+        </div>
+      </div>
+
+      <!-- Skills -->
+      <p class="detail-section-title">Skills</p>
+      <div id="detail-skills-list" class="skills-list">
+        {% if selectedJob and selectedJob.skills %}
+          {% for skill in selectedJob.skills %}
+            <span class="skill-chip">{{ skill }}</span>
+          {% endfor %}
+        {% else %}
+          <span style="font-size:13px;color:var(--color-muted)">No skills listed</span>
+        {% endif %}
+      </div>
+
+      <!-- Description -->
+      <p class="detail-section-title">Description</p>
+      <p id="detail-description" class="detail-description">
+        {{ selectedJob.description if selectedJob else "No description captured." }}
+      </p>
+
+      <!-- Raw JSON -->
+      <details class="raw-json-toggle" style="margin-top:20px">
+        <summary><i class="fa-solid fa-code" style="font-size:10px"></i> View raw JSON</summary>
+        <pre id="detail-json" class="raw-json">{{ selectedJob.rawJson | tojson(indent=2) if selectedJob else '' }}</pre>
+      </details>
     </div>
-    <details class="mt-5">
-      <summary class="cursor-pointer text-sm font-semibold text-[var(--color-primary)]">Raw JSON preview</summary>
-      <pre id="detail-json" class="raw-json">{{ selectedJob.rawJson | tojson(indent=2) if selectedJob else '' }}</pre>
-    </details>
   </div>
-  <div id="detail-empty" class="empty-state min-h-[420px] {{ 'hidden' if selectedJob else '' }}">
-    <h3>No selected job</h3>
-    <p>Collected jobs will appear here with full description, client metadata, skills, status, and raw scraper payload.</p>
+
+  <!-- Empty state -->
+  <div id="detail-empty" class="detail-empty {{ 'hidden' if selectedJob else '' }}">
+    <div class="detail-empty-icon">
+      <i class="fa-regular fa-file-lines"></i>
+    </div>
+    <h3>No job selected</h3>
+    <p>Click any row in the table to see the full job details, skills, and client info here.</p>
   </div>
+
 </aside>

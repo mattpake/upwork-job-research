@@ -52,7 +52,7 @@
       <input class="field-control" name="posted_after" type="date" value="{{ activeFilters.posted_after or '' }}">
     </label>
     <div class="filter-actions">
-      <button class="secondary-button" type="submit">Filter</button>
+      <button class="ghost-button" type="submit">Filter</button>
       <a class="ghost-button" href="/export.csv?{{ request.query_params }}">Export CSV</a>
     </div>
   </form>
