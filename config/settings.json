@@ -1,11 +1,14 @@
 {
   "apify_actor_id": "upwork-vibe/upwork-job-scraper",
-  "results_per_keyword": 50,
+  "max_keywords_per_scan": 3,
+  "results_per_keyword": 10,
+  "max_total_results_per_scan": 30,
   "request_timeout_seconds": 120,
   "keywords_path": "config/keywords.json",
   "database_path": "database/upwork_jobs.db",
   "session_secret": "local-upwork-research-dashboard-session",
   "dashboard_host": "127.0.0.1",
   "dashboard_port": 8000,
-  "scan_concurrency_limit": 4
+  "scan_concurrency_limit": 1,
+  "dry_run": true
 }

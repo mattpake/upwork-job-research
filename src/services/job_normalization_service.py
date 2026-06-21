@@ -52,17 +52,26 @@ def normalizeRawUpworkJob(rawJobPayload: dict[str, Any], searchKeyword: str) -> 
             _firstString(rawJobPayload, ["clientCountry", "client_country"]) or rawClientPayload.get("country") or rawClientPayload.get("countryCode") or rawClientPayload.get("country_code")
         ),
         # client spent may come from top-level, client.totalSpent, or client.stats.totalSpent
-        clientSpent=_firstString(rawJobPayload, ["clientTotalSpent", "client_spent"]) or rawClientPayload.get("totalSpent") or raw_client_stats.get("totalSpent") or raw_client_stats.get("total_spent"),
+        clientSpent=_firstString(rawJobPayload, ["clientTotalSpent", "client_spent"])
+        or _optionalString(rawClientPayload.get("totalSpent"))
+        or _optionalString(raw_client_stats.get("totalSpent"))
+        or _optionalString(raw_client_stats.get("total_spent")),
         clientRating=_firstNumber(rawJobPayload, ["clientRating", "client_rating"]) or raw_client_stats.get("feedbackRate"),
         # payment verification sometimes appears under client.paymentMethodVerified
         paymentVerified=_firstBoolean(rawJobPayload, ["clientVerified", "payment_verified"]) or _firstBoolean(rawClientPayload, ["paymentMethodVerified", "payment_method_verified"]),
         proposalsCount=_firstString(rawJobPayload, ["proposals", "proposals_count", "applicants"]),
         postedAt=_firstString(rawJobPayload, ["postedOn", "posted_at", "ts_publish", "publishedAt"]),
         rawJson=rawJobPayload,
-        clientHires=_firstString(rawJobPayload, ["clientHires", "client_hires"]) or raw_client_stats.get("totalHires") or raw_client_stats.get("total_hires"),
-        clientJobsPosted=_firstString(rawJobPayload, ["clientJobsPosted", "client_jobs_posted"]) or raw_client_stats.get("jobsPosted") or raw_client_stats.get("jobs_posted"),
-        clientAvgHourlyRatePaid=_firstString(rawJobPayload, ["clientAvgHourlyRatePaid"]),
-        clientTotalReviews=_firstString(rawJobPayload, ["clientTotalReviews"]),
+        clientHires=_firstString(rawJobPayload, ["clientHires", "client_hires"])
+        or _optionalString(raw_client_stats.get("totalHires"))
+        or _optionalString(raw_client_stats.get("total_hires")),
+        clientJobsPosted=_firstString(rawJobPayload, ["clientJobsPosted", "client_jobs_posted"])
+        or _optionalString(raw_client_stats.get("jobsPosted"))
+        or _optionalString(raw_client_stats.get("jobs_posted")),
+        clientAvgHourlyRatePaid=_firstString(rawJobPayload, ["clientAvgHourlyRatePaid"])
+        or _optionalString(raw_client_stats.get("avgHourlyRatePaid")),
+        clientTotalReviews=_firstString(rawJobPayload, ["clientTotalReviews"])
+        or _optionalString(raw_client_stats.get("totalReviews")),
         jobDuration=_firstString(rawJobPayload, ["duration", "job_duration", "estimated_time"]),
         # experience may be top-level or under vendor.experienceLevel
         experienceLevel=_firstString(rawJobPayload, ["experienceLevel", "level", "experience_level"]) or _firstString(raw_vendor_payload, ["experienceLevel", "experience_level"]),
@@ -75,9 +84,17 @@ def normalizeRawUpworkJob(rawJobPayload: dict[str, Any], searchKeyword: str) -> 
 def _firstString(rawPayload: dict[str, Any], candidateKeys: list[str]) -> str | None:
     for candidateKey in candidateKeys:
         rawValue = rawPayload.get(candidateKey)
-        if rawValue is not None and str(rawValue).strip():
-            return str(rawValue).strip()
+        normalizedValue = _optionalString(rawValue)
+        if normalizedValue is not None:
+            return normalizedValue
     return None
+
+
+def _optionalString(rawValue: Any) -> str | None:
+    if rawValue is None:
+        return None
+    normalizedValue = str(rawValue).strip()
+    return normalizedValue or None
 
 
 def _resolve_country_name(raw_country: Any) -> str | None:

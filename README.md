@@ -39,3 +39,34 @@ A local research tool that scrapes Upwork jobs using Apify, automatically merges
 * **Keywords**: Manage your search terms in `config/keywords.json`.
 * **Application Settings**: Default settings (like API timeouts and concurrency) live in `config/settings.json`.
 * **Secrets & Overrides**: Use your `.env` file to set your API token and override any default settings (e.g., `UPWORK_RESEARCH_RESULTS_PER_KEYWORD`).
+
+## Scan Safety Defaults
+
+Live Apify scans are safety-limited by default:
+
+* `max_keywords_per_scan`: 3
+* `results_per_keyword`: 10
+* `max_total_results_per_scan`: 30
+* `scan_concurrency_limit`: 1
+* `dry_run`: true
+
+The app also applies hard clamps unless `ALLOW_LARGE_SCAN=true` is set:
+
+* max 10 keywords per scan
+* max 20 results per keyword
+* max 100 requested jobs per scan
+* max concurrency 2
+
+The CLI prints the planned scan before doing anything:
+
+```bash
+uv run run_scraper.py
+```
+
+With `dry_run=true`, that command does not call Apify. To intentionally run a live scan, set safe limits first, then either set `UPWORK_RESEARCH_DRY_RUN=false` or pass:
+
+```bash
+uv run run_scraper.py --live
+```
+
+The dashboard shows the planned keyword count, results per keyword, max requested jobs, concurrency, and dry-run state before starting a scan.

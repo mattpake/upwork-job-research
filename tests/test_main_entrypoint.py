@@ -1,7 +1,7 @@
-import main
+import importlib
 
 
-def test_start_development_server_runs_uvicorn_with_local_dashboard_defaults(monkeypatch):
+def test_start_development_server_runs_uvicorn_with_local_dashboard_defaults(tmp_path, monkeypatch):
     capturedUvicornArguments = {}
 
     def fakeUvicornRun(applicationImportPath, host, port, reload):
@@ -10,9 +10,11 @@ def test_start_development_server_runs_uvicorn_with_local_dashboard_defaults(mon
         capturedUvicornArguments["port"] = port
         capturedUvicornArguments["reload"] = reload
 
-    monkeypatch.setattr(main.uvicorn, "run", fakeUvicornRun)
     monkeypatch.setenv("UPWORK_RESEARCH_DASHBOARD_HOST", "127.0.0.1")
     monkeypatch.setenv("UPWORK_RESEARCH_DASHBOARD_PORT", "8000")
+    monkeypatch.setenv("UPWORK_RESEARCH_DATABASE_PATH", str(tmp_path / "jobs.db"))
+    main = importlib.import_module("main")
+    monkeypatch.setattr(main.uvicorn, "run", fakeUvicornRun)
 
     main.startDevelopmentServer()
 

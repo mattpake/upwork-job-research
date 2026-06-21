@@ -1,15 +1,16 @@
 import logging
 
-from fastapi import APIRouter, Form, Query, Request, BackgroundTasks
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi import APIRouter, BackgroundTasks, Form, HTTPException, Query, Request
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
-from src.core.config import loadApplicationSettings, loadConfiguredKeywords
+from src.core.config import buildScanPlan, loadApplicationSettings, loadConfiguredKeywords
 from src.models.job_models import VALID_JOB_STATUSES
 from src.repositories.job_repository import JobRepository
 from src.scrapers.apify_upwork_scraper import ApifyUpworkScraper
 from src.services.csv_export_service import buildJobsCsv
 from src.services.scan_orchestration_service import UpworkScanOrchestrator
+from src.services.scan_status_service import scanStatusRegistry
 
 
 templates = Jinja2Templates(directory="src/web/templates")
@@ -31,9 +32,11 @@ async def renderDashboard(
     maximum_hourly_rate: str = "",
     scraped_after: str = "",
     posted_after: str = "",
+    scan_id: str = "",
 ) -> HTMLResponse:
     applicationSettings = loadApplicationSettings()
     configuredKeywords = loadConfiguredKeywords(applicationSettings.keywordsPath)
+    scanPlan = buildScanPlan(configuredKeywords, applicationSettings)
     jobRepository = JobRepository(applicationSettings.databasePath)
     activeFilters = _buildActiveFilters(
         keyword,
@@ -64,6 +67,8 @@ async def renderDashboard(
             "selectedJob": selectedJob,
             "activeFilters": activeFilters,
             "validJobStatuses": VALID_JOB_STATUSES,
+            "scanPlan": scanPlan,
+            "activeScanId": scan_id,
             "scanSummary": scanSummary,
             "scanState": scanState,
             "scanError": request.session.pop("scanError", None) if hasattr(request, "session") else None,
@@ -71,9 +76,16 @@ async def renderDashboard(
     )
 
 
-async def _runBackgroundScan() -> None:
+async def _runBackgroundScan(scanId: str) -> None:
     applicationSettings = loadApplicationSettings()
     configuredKeywords = loadConfiguredKeywords(applicationSettings.keywordsPath)
+    scanPlan = buildScanPlan(configuredKeywords, applicationSettings)
+    if scanPlan.dryRun:
+        logger.info("dashboard_background_scan_skipped_dry_run")
+        scanStatusRegistry.markDryRun(scanId)
+        return
+
+    scanStatusRegistry.markRunning(scanId)
     jobRepository = JobRepository(applicationSettings.databasePath)
     apifyUpworkScraper = ApifyUpworkScraper(
         applicationSettings.apifyApiToken,
@@ -83,31 +95,62 @@ async def _runBackgroundScan() -> None:
     scanOrchestrator = UpworkScanOrchestrator(
         apifyUpworkScraper,
         jobRepository,
-        applicationSettings.resultsPerKeyword,
-        applicationSettings.scanConcurrencyLimit,
+        scanPlan.resultsPerKeyword,
+        scanPlan.scanConcurrencyLimit,
     )
     try:
-        await scanOrchestrator.runKeywordScan(configuredKeywords)
-    except Exception:
+        scanSummary = await scanOrchestrator.runKeywordScan(scanPlan.keywords)
+        scanStatusRegistry.markSucceeded(scanId, scanSummary)
+        logger.info(
+            "dashboard_background_scan_succeeded scan_id=%s raw_items=%s normalized=%s inserted=%s skipped=%s",
+            scanId,
+            scanSummary.rawItemsCount,
+            scanSummary.normalizedItemsCount,
+            scanSummary.insertedJobsCount,
+            scanSummary.skippedJobsCount,
+        )
+    except Exception as scanException:
         logger.exception("background_scan_failed")
+        scanStatusRegistry.markFailed(scanId, str(scanException))
 
 
 @dashboardRouter.post("/scan")
 async def runUpworkScan(request: Request, background_tasks: BackgroundTasks) -> RedirectResponse:
     applicationSettings = loadApplicationSettings()
     configuredKeywords = loadConfiguredKeywords(applicationSettings.keywordsPath)
+    scanPlan = buildScanPlan(configuredKeywords, applicationSettings)
     logger.info(
-        "dashboard_scan_requested keywords=%s actor=%s results_per_keyword=%s",
-        len(configuredKeywords),
+        "dashboard_scan_requested keywords=%s actor_runs=%s actor=%s results_per_keyword=%s max_requested_jobs=%s dry_run=%s",
+        scanPlan.requestedKeywordCount,
+        scanPlan.estimatedActorRuns,
         applicationSettings.apifyActorId,
-        applicationSettings.resultsPerKeyword,
+        scanPlan.resultsPerKeyword,
+        scanPlan.estimatedMaxRequestedJobs,
+        scanPlan.dryRun,
     )
+    scanState = scanStatusRegistry.createScan(scanPlan, status="running")
+
+    if scanPlan.dryRun:
+        scanStatusRegistry.markDryRun(scanState.scan_id)
+        return RedirectResponse(f"/?scan_id={scanState.scan_id}", status_code=303)
+    if scanPlan.hardSafetyLimitExceeded and not scanPlan.allowLargeScan:
+        scanStatusRegistry.markFailed(
+            scanState.scan_id,
+            "Scan rejected because one or more settings exceed the hard safety limits.",
+        )
+        logger.warning("dashboard_scan_rejected_hard_safety_limit notes=%s", scanPlan.safetyNotes)
+        return RedirectResponse(f"/?scan_id={scanState.scan_id}", status_code=303)
     
-    background_tasks.add_task(_runBackgroundScan)
-    
-    if hasattr(request, "session"):
-        request.session["scanSummary"] = {"errors": [], "message": "Scan started in the background. Please wait a few minutes and refresh."}
-    return RedirectResponse("/", status_code=303)
+    background_tasks.add_task(_runBackgroundScan, scanState.scan_id)
+    return RedirectResponse(f"/?scan_id={scanState.scan_id}", status_code=303)
+
+
+@dashboardRouter.get("/scan/status/{scan_id}")
+async def getScanStatus(scan_id: str) -> JSONResponse:
+    scanState = scanStatusRegistry.getScan(scan_id)
+    if scanState is None:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    return JSONResponse(scanState)
 
 
 @dashboardRouter.post("/jobs/{job_id}/status")
