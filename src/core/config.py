@@ -7,7 +7,9 @@ from dotenv import load_dotenv
 
 
 DEFAULT_APIFY_ACTOR_ID = "upwork-vibe/upwork-job-scraper"
-DEFAULT_RESULTS_PER_KEYWORD = 50
+DEFAULT_MAX_KEYWORDS_PER_SCAN = 3
+DEFAULT_RESULTS_PER_KEYWORD = 10
+DEFAULT_MAX_TOTAL_RESULTS_PER_SCAN = 30
 DEFAULT_KEYWORDS_PATH = Path("config/keywords.json")
 DEFAULT_SETTINGS_PATH = Path("config/settings.json")
 DEFAULT_DATABASE_PATH = Path("database/upwork_jobs.db")
@@ -15,7 +17,13 @@ DEFAULT_REQUEST_TIMEOUT_SECONDS = 120
 DEFAULT_SESSION_SECRET = "local-upwork-research-dashboard-session"
 DEFAULT_DASHBOARD_HOST = "127.0.0.1"
 DEFAULT_DASHBOARD_PORT = 8000
-DEFAULT_SCAN_CONCURRENCY_LIMIT = 4
+DEFAULT_SCAN_CONCURRENCY_LIMIT = 1
+DEFAULT_DRY_RUN = True
+
+HARD_MAX_KEYWORDS_PER_SCAN = 10
+HARD_MAX_RESULTS_PER_KEYWORD = 20
+HARD_MAX_TOTAL_RESULTS_PER_SCAN = 100
+HARD_MAX_SCAN_CONCURRENCY_LIMIT = 2
 
 
 @dataclass(frozen=True)
@@ -24,7 +32,9 @@ class ApplicationSettings:
 
     apifyApiToken: str
     apifyActorId: str
+    maxKeywordsPerScan: int
     resultsPerKeyword: int
+    maxTotalResultsPerScan: int
     keywordsPath: Path
     databasePath: Path
     requestTimeoutSeconds: int
@@ -32,6 +42,26 @@ class ApplicationSettings:
     dashboardHost: str
     dashboardPort: int
     scanConcurrencyLimit: int
+    dryRun: bool
+    allowLargeScan: bool
+
+
+@dataclass(frozen=True)
+class ScanPlan:
+    """Effective safety-limited scan settings for one run."""
+
+    keywords: list[str]
+    requestedKeywordCount: int
+    maxKeywordsPerScan: int
+    resultsPerKeyword: int
+    maxTotalResultsPerScan: int
+    estimatedActorRuns: int
+    estimatedMaxRequestedJobs: int
+    scanConcurrencyLimit: int
+    dryRun: bool
+    allowLargeScan: bool
+    hardSafetyLimitExceeded: bool
+    safetyNotes: list[str]
 
 
 def loadApplicationSettings() -> ApplicationSettings:
@@ -46,6 +76,12 @@ def loadFileBackedApplicationSettings(settingsConfigPath: Path) -> ApplicationSe
     """Load application settings using settings JSON values with environment overrides."""
 
     fileSettings = _loadSettingsJson(settingsConfigPath)
+    maxKeywordsPerScan = int(
+        os.getenv(
+            "UPWORK_RESEARCH_MAX_KEYWORDS_PER_SCAN",
+            str(fileSettings.get("max_keywords_per_scan", DEFAULT_MAX_KEYWORDS_PER_SCAN)),
+        )
+    )
     resultsPerKeyword = int(
         os.getenv(
             "UPWORK_RESEARCH_RESULTS_PER_KEYWORD",
@@ -70,6 +106,13 @@ def loadFileBackedApplicationSettings(settingsConfigPath: Path) -> ApplicationSe
             str(fileSettings.get("scan_concurrency_limit", DEFAULT_SCAN_CONCURRENCY_LIMIT)),
         )
     )
+    maxTotalResultsPerScan = int(
+        os.getenv(
+            "UPWORK_RESEARCH_MAX_TOTAL_RESULTS_PER_SCAN",
+            str(fileSettings.get("max_total_results_per_scan", DEFAULT_MAX_TOTAL_RESULTS_PER_SCAN)),
+        )
+    )
+    dryRun = _readBooleanSetting("UPWORK_RESEARCH_DRY_RUN", fileSettings.get("dry_run", DEFAULT_DRY_RUN))
 
     return ApplicationSettings(
         apifyApiToken=os.getenv("APIFY_API_TOKEN", ""),
@@ -77,7 +120,9 @@ def loadFileBackedApplicationSettings(settingsConfigPath: Path) -> ApplicationSe
             "UPWORK_RESEARCH_APIFY_ACTOR_ID",
             str(fileSettings.get("apify_actor_id", DEFAULT_APIFY_ACTOR_ID)),
         ),
-        resultsPerKeyword=resultsPerKeyword,
+        maxKeywordsPerScan=max(1, maxKeywordsPerScan),
+        resultsPerKeyword=max(1, resultsPerKeyword),
+        maxTotalResultsPerScan=max(1, maxTotalResultsPerScan),
         keywordsPath=Path(
             os.getenv("UPWORK_RESEARCH_KEYWORDS_PATH", str(fileSettings.get("keywords_path", DEFAULT_KEYWORDS_PATH)))
         ),
@@ -95,6 +140,88 @@ def loadFileBackedApplicationSettings(settingsConfigPath: Path) -> ApplicationSe
         ),
         dashboardPort=dashboardPort,
         scanConcurrencyLimit=max(1, scanConcurrencyLimit),
+        dryRun=dryRun,
+        allowLargeScan=_parseBoolean(os.getenv("ALLOW_LARGE_SCAN", "false")),
+    )
+
+
+def buildScanPlan(configuredKeywords: list[str], applicationSettings: ApplicationSettings) -> ScanPlan:
+    """Build the effective scan plan, applying hard safety clamps unless explicitly disabled."""
+
+    safetyNotes: list[str] = []
+    effectiveMaxKeywords = applicationSettings.maxKeywordsPerScan
+    effectiveResultsPerKeyword = applicationSettings.resultsPerKeyword
+    effectiveMaxTotalResults = applicationSettings.maxTotalResultsPerScan
+    effectiveConcurrency = applicationSettings.scanConcurrencyLimit
+    hardSafetyLimitExceeded = False
+
+    if not applicationSettings.allowLargeScan:
+        hardSafetyLimitExceeded = (
+            effectiveMaxKeywords > HARD_MAX_KEYWORDS_PER_SCAN
+            or effectiveResultsPerKeyword > HARD_MAX_RESULTS_PER_KEYWORD
+            or effectiveMaxTotalResults > HARD_MAX_TOTAL_RESULTS_PER_SCAN
+            or effectiveConcurrency > HARD_MAX_SCAN_CONCURRENCY_LIMIT
+        )
+        effectiveMaxKeywords = _clampWithNote(
+            effectiveMaxKeywords,
+            HARD_MAX_KEYWORDS_PER_SCAN,
+            "max_keywords_per_scan",
+            safetyNotes,
+        )
+        effectiveResultsPerKeyword = _clampWithNote(
+            effectiveResultsPerKeyword,
+            HARD_MAX_RESULTS_PER_KEYWORD,
+            "results_per_keyword",
+            safetyNotes,
+        )
+        effectiveMaxTotalResults = _clampWithNote(
+            effectiveMaxTotalResults,
+            HARD_MAX_TOTAL_RESULTS_PER_SCAN,
+            "max_total_results_per_scan",
+            safetyNotes,
+        )
+        effectiveConcurrency = _clampWithNote(
+            effectiveConcurrency,
+            HARD_MAX_SCAN_CONCURRENCY_LIMIT,
+            "scan_concurrency_limit",
+            safetyNotes,
+        )
+
+    selectedKeywordLimit = min(len(configuredKeywords), effectiveMaxKeywords)
+    if selectedKeywordLimit < len(configuredKeywords):
+        safetyNotes.append(
+            f"keywords truncated from {len(configuredKeywords)} to {selectedKeywordLimit}"
+        )
+
+    if effectiveResultsPerKeyword > effectiveMaxTotalResults:
+        safetyNotes.append(
+            f"results_per_keyword reduced from {effectiveResultsPerKeyword} to {effectiveMaxTotalResults} to fit max_total_results_per_scan"
+        )
+        effectiveResultsPerKeyword = effectiveMaxTotalResults
+
+    maxKeywordsAllowedByTotal = max(1, effectiveMaxTotalResults // effectiveResultsPerKeyword)
+    if selectedKeywordLimit > maxKeywordsAllowedByTotal:
+        safetyNotes.append(
+            f"keywords truncated from {selectedKeywordLimit} to {maxKeywordsAllowedByTotal} to fit max_total_results_per_scan"
+        )
+        selectedKeywordLimit = maxKeywordsAllowedByTotal
+
+    selectedKeywords = configuredKeywords[:selectedKeywordLimit]
+    estimatedMaxRequestedJobs = len(selectedKeywords) * effectiveResultsPerKeyword
+
+    return ScanPlan(
+        keywords=selectedKeywords,
+        requestedKeywordCount=len(configuredKeywords),
+        maxKeywordsPerScan=effectiveMaxKeywords,
+        resultsPerKeyword=effectiveResultsPerKeyword,
+        maxTotalResultsPerScan=effectiveMaxTotalResults,
+        estimatedActorRuns=len(selectedKeywords),
+        estimatedMaxRequestedJobs=estimatedMaxRequestedJobs,
+        scanConcurrencyLimit=effectiveConcurrency,
+        dryRun=applicationSettings.dryRun,
+        allowLargeScan=applicationSettings.allowLargeScan,
+        hardSafetyLimitExceeded=hardSafetyLimitExceeded,
+        safetyNotes=safetyNotes,
     )
 
 
@@ -105,6 +232,26 @@ def _loadSettingsJson(settingsConfigPath: Path) -> dict[str, object]:
     if not isinstance(rawSettings, dict):
         raise ValueError("Settings config must contain a JSON object.")
     return rawSettings
+
+
+def _clampWithNote(value: int, hardLimit: int, settingName: str, safetyNotes: list[str]) -> int:
+    if value <= hardLimit:
+        return value
+    safetyNotes.append(f"{settingName} clamped from {value} to {hardLimit}")
+    return hardLimit
+
+
+def _readBooleanSetting(environmentKey: str, fileValue: object) -> bool:
+    environmentValue = os.getenv(environmentKey)
+    if environmentValue is not None:
+        return _parseBoolean(environmentValue)
+    if isinstance(fileValue, bool):
+        return fileValue
+    return _parseBoolean(str(fileValue))
+
+
+def _parseBoolean(rawValue: str) -> bool:
+    return rawValue.strip().casefold() in {"1", "true", "yes", "on"}
 
 
 def loadConfiguredKeywords(keywordConfigPath: Path) -> list[str]:

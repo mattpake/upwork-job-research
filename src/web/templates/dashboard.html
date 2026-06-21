@@ -23,6 +23,7 @@
   <body
     data-scan-summary="{{ scanState }}"
     data-scan-errors="{{ scanSummary.errors | length if scanSummary else 0 }}"
+    data-active-scan-id="{{ activeScanId }}"
   >
     <main class="mx-auto flex min-h-screen w-full max-w-[1440px] flex-col gap-4 px-5 py-5">
 
@@ -36,39 +37,44 @@
           <a class="ghost-button" href="/export.csv?{{ request.query_params }}">
             <i class="fa-solid fa-download" style="font-size:11px"></i> Export CSV
           </a>
-          <form action="/scan" method="post" data-loading-form>
+          <form
+            action="/scan"
+            method="post"
+            data-loading-form
+            data-scan-confirm="This scan will run {{ scanPlan.estimatedActorRuns }} keywords, {{ scanPlan.resultsPerKeyword }} results per keyword, max {{ scanPlan.estimatedMaxRequestedJobs }} jobs total."
+          >
             <button class="primary-button" type="submit">
               <i class="fa-solid fa-magnifying-glass" style="font-size:11px"></i>
-              <span data-button-label>Run Scan</span>
+              <span data-button-label>{{ 'Preview Scan' if scanPlan.dryRun else 'Run Scan' }}</span>
             </button>
           </form>
         </div>
       </header>
 
-      <!-- Scan summary banner -->
-      {% if scanSummary %}
-        <section class="scan-result-panel {{ 'is-error' if scanSummary.errors else 'is-success' }}">
-          <div>
-            <p style="font-size:12px;font-weight:600;color:var(--color-muted)">
-              {{ 'Scan finished with errors' if scanSummary.errors else 'Scan complete' }}
-            </p>
-            {% if scanSummary.newJobsAdded is defined %}
-              <p style="margin-top:4px;font-weight:600;font-size:14px">
-                {{ scanSummary.newJobsAdded }} new &middot; {{ scanSummary.duplicatesFound }} duplicates &middot; {{ scanSummary.totalJobsFetched }} fetched
-              </p>
-            {% else %}
-              <p style="margin-top:4px;font-weight:600;font-size:14px">{{ scanSummary.message }}</p>
-            {% endif %}
-          </div>
-          {% if scanSummary.errors %}
-            <span style="font-size:12px;font-weight:600;color:var(--color-error)">{{ scanSummary.errors | length }} errors</span>
+      <section class="scan-result-panel">
+        <div>
+          <p style="font-size:12px;font-weight:600;color:var(--color-muted)">Current scan limits</p>
+          <p style="margin-top:4px;font-weight:600;font-size:14px">
+            This scan will run {{ scanPlan.estimatedActorRuns }} keywords, {{ scanPlan.resultsPerKeyword }} results per keyword, max {{ scanPlan.estimatedMaxRequestedJobs }} jobs total.
+          </p>
+          <p style="margin-top:4px;font-size:12px;color:var(--color-muted)">
+            Concurrency {{ scanPlan.scanConcurrencyLimit }} &middot; Dry run {{ 'on' if scanPlan.dryRun else 'off' }} &middot; Large scans {{ 'allowed' if scanPlan.allowLargeScan else 'clamped' }}
+          </p>
+          {% if scanPlan.safetyNotes %}
+            <p style="margin-top:4px;font-size:12px;color:var(--color-muted)">{{ scanPlan.safetyNotes | join('; ') }}</p>
           {% endif %}
+        </div>
+      </section>
+
+      {% if activeScanId %}
+        <section class="scan-result-panel" data-scan-status-panel>
+          <div>
+            <p style="font-size:12px;font-weight:600;color:var(--color-muted)" data-scan-status-label>Scan started</p>
+            <p style="margin-top:4px;font-weight:600;font-size:14px" data-scan-status-message>
+              Scan running. The table will refresh automatically when results are saved.
+            </p>
+          </div>
         </section>
-        {% if scanSummary.errors %}
-          <section style="padding:12px 16px;font-size:13px;color:var(--color-error);border:1px solid #f5c6c3;border-radius:var(--radius-md);background:#fce8e6">
-            {% for scanError in scanSummary.errors %}<p>{{ scanError }}</p>{% endfor %}
-          </section>
-        {% endif %}
       {% endif %}
 
       <!-- Filters -->

@@ -7,6 +7,10 @@ let allRows = [];
 const loadingForms = document.querySelectorAll("[data-loading-form]");
 const scanOverlay = document.querySelector("[data-scan-overlay]");
 const scanPhase = document.querySelector("[data-scan-phase]");
+const activeScanId = document.body.dataset.activeScanId;
+const scanStatusPanel = document.querySelector("[data-scan-status-panel]");
+const scanStatusLabel = document.querySelector("[data-scan-status-label]");
+const scanStatusMessage = document.querySelector("[data-scan-status-message]");
 const scanPhases = [
   "Preparing configured keywords",
   "Running concurrent Apify actor jobs",
@@ -15,9 +19,15 @@ const scanPhases = [
   "Saving fresh research to SQLite"
 ];
 let scanPhaseTimerId = null;
+let scanStatusTimerId = null;
 
 loadingForms.forEach((loadingForm) => {
-  loadingForm.addEventListener("submit", () => {
+  loadingForm.addEventListener("submit", (event) => {
+    const confirmationMessage = loadingForm.dataset.scanConfirm;
+    if (confirmationMessage && !window.confirm(confirmationMessage)) {
+      event.preventDefault();
+      return;
+    }
     const submitButton = loadingForm.querySelector("button[type='submit']");
     const buttonLabel = loadingForm.querySelector("[data-button-label]");
     if (!submitButton || !buttonLabel) return;
@@ -38,6 +48,71 @@ function showScanOverlay() {
     activePhaseIndex = (activePhaseIndex + 1) % scanPhases.length;
     scanPhase.textContent = scanPhases[activePhaseIndex];
   }, 1800);
+}
+
+function hideScanOverlay() {
+  if (!scanOverlay) return;
+  scanOverlay.classList.remove("is-visible");
+  scanOverlay.setAttribute("aria-hidden", "true");
+  window.clearInterval(scanPhaseTimerId);
+}
+
+function updateScanStatusCopy(label, message, isError = false) {
+  if (!scanStatusPanel || !scanStatusLabel || !scanStatusMessage) return;
+  scanStatusLabel.textContent = label;
+  scanStatusMessage.textContent = message;
+  scanStatusPanel.classList.toggle("is-error", isError);
+  scanStatusPanel.classList.toggle("is-success", !isError && (label === "Scan completed" || label === "Dry run complete"));
+}
+
+async function pollScanStatus(scanId) {
+  try {
+    const response = await fetch(`/scan/status/${scanId}`, { headers: { Accept: "application/json" } });
+    if (!response.ok) {
+      updateScanStatusCopy("Scan failed", "Unable to read scan status.", true);
+      return;
+    }
+    const scanStatus = await response.json();
+    if (scanStatus.status === "pending" || scanStatus.status === "running") {
+      updateScanStatusCopy("Scan running", "Scan running. The table will refresh automatically when results are saved.");
+      return;
+    }
+    window.clearInterval(scanStatusTimerId);
+    window.clearInterval(scanPhaseTimerId);
+    if (scanStatus.status === "succeeded") {
+      updateScanStatusCopy(
+        "Scan completed",
+        `Scan completed. ${scanStatus.inserted_jobs_count || 0} jobs inserted. Refreshing table...`
+      );
+      window.setTimeout(reloadWithoutScanId, 700);
+      return;
+    }
+    if (scanStatus.status === "dry_run") {
+      updateScanStatusCopy("Dry run complete", "Dry run complete. No Apify calls were made.");
+      hideScanOverlay();
+      return;
+    }
+    updateScanStatusCopy("Scan failed", scanStatus.error_message || "Scan failed.", true);
+    hideScanOverlay();
+  } catch (error) {
+    updateScanStatusCopy("Scan failed", "Unable to read scan status.", true);
+    hideScanOverlay();
+    window.clearInterval(scanStatusTimerId);
+  }
+}
+
+function reloadWithoutScanId() {
+  const nextUrl = new URL(window.location.href);
+  nextUrl.searchParams.delete("scan_id");
+  window.location.href = nextUrl.toString();
+}
+
+function initScanStatusPolling() {
+  if (!activeScanId) return;
+  showScanOverlay();
+  updateScanStatusCopy("Scan started", "Scan running. The table will refresh automatically when results are saved.");
+  pollScanStatus(activeScanId);
+  scanStatusTimerId = window.setInterval(() => pollScanStatus(activeScanId), 1500);
 }
 
 // ---- Pagination ----
@@ -219,3 +294,4 @@ function initJobSelection() {
 // ---- Init ----
 initPagination();
 initJobSelection();
+initScanStatusPolling();

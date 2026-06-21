@@ -64,3 +64,7 @@ class ScanRunSummary(BaseModel):
     newJobsAdded: int
     duplicatesFound: int
     errors: list[str] = Field(default_factory=list)
+    rawItemsCount: int = 0
+    normalizedItemsCount: int = 0
+    insertedJobsCount: int = 0
+    skippedJobsCount: int = 0

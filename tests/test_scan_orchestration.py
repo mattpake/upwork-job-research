@@ -11,8 +11,22 @@ class FakeSlowApifyScraper:
         return [{"jobId": keyword, "title": f"{keyword} job", "url": f"https://example.com/{keyword}"}]
 
 
+class FakeCountingApifyScraper:
+    def __init__(self):
+        self.callCount = 0
+
+    async def fetchJobsForKeyword(self, keyword: str, maxJobs: int):
+        self.callCount += 1
+        return [{"jobId": keyword, "title": f"{keyword} job", "url": f"https://example.com/{keyword}"}]
+
+
 class FakeJobRepository:
+    def __init__(self):
+        self.upsertCallCount = 0
+
     def upsertNormalizedJobs(self, normalizedJobs: list[NormalizedUpworkJob]):
+        self.upsertCallCount += 1
+
         class FakeUpsertSummary:
             totalJobsFetched = len(normalizedJobs)
             newJobsAdded = len(normalizedJobs)
@@ -36,3 +50,21 @@ def test_keyword_scan_runs_with_configured_concurrency_limit():
     assert elapsedSeconds < 0.12
     assert scanSummary.totalJobsFetched == 4
     assert scanSummary.newJobsAdded == 4
+
+
+def test_dry_run_does_not_call_apify_or_repository():
+    fakeApifyScraper = FakeCountingApifyScraper()
+    fakeJobRepository = FakeJobRepository()
+    scanOrchestrator = UpworkScanOrchestrator(
+        fakeApifyScraper,
+        fakeJobRepository,
+        resultsPerKeyword=10,
+        scanConcurrencyLimit=1,
+        dryRun=True,
+    )
+
+    scanSummary = asyncio.run(scanOrchestrator.runKeywordScan(["a", "b", "c"]))
+
+    assert fakeApifyScraper.callCount == 0
+    assert fakeJobRepository.upsertCallCount == 0
+    assert scanSummary.totalJobsFetched == 0
